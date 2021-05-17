@@ -1,0 +1,31 @@
+{
+    "name": "aymdev/fregata-bundle",
+    "description": "Symfony bundle for the Fregata migration framework.",
+    "type": "symfony-bundle",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "AymDev",
+            "email": "aymericmayeux@gmail.com"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {
+        "php": ">=7.4",
+        "aymdev/fregata": "^1.0",
+        "symfony/http-kernel": "^4.4||^5.0",
+        "symfony/dependency-injection": "^4.4||^5.0",
+        "symfony/config": "^4.4||^5.0",
+        "symfony/framework-bundle": "^4.4||^5.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Fregata\\FregataBundle\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\Fregata\\FregataBundle\\": "tests/"
+        }
+    }
+}
