@@ -9,5 +9,7 @@ services:
         tty: true
         stdin_open: true
         network_mode: host
+        expose:
+            - 8000
         volumes:
             - ./:/var/www/html
