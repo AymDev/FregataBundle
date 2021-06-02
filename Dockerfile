@@ -10,4 +10,10 @@ RUN apk add --no-cache bash && \
     wget https://get.symfony.com/cli/installer -O - | bash && \
     mv /root/.symfony/bin/symfony /usr/local/bin/symfony
 
-ENTRYPOINT ["bash"]
+COPY . .
+
+RUN composer install
+
+EXPOSE 8000
+
+ENTRYPOINT ["symfony", "server:start", "--dir=./_implementation", "--no-tls"]

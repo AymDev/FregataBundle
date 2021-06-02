@@ -1,15 +1,33 @@
 version: "3.7"
 
+networks:
+    bundle_net:
+
+volumes:
+    pg_data:
+
 services:
+    postgres:
+        image: "postgres:13.3-alpine"
+        environment:
+            POSTGRES_USER: root
+            POSTGRES_PASSWORD: root
+            POSTGRES_DB: fregata_bundle_db
+        networks:
+            - bundle_net
+        ports:
+            - 5432:5432
+        volumes:
+            - pg_data:/var/lib/postgresql/data
+
     app:
         build:
             context: .
         container_name: fregata_bundle_app
         restart: on-failure
-        tty: true
-        stdin_open: true
-        network_mode: host
-        expose:
-            - 8000
+        networks:
+            - bundle_net
+        ports:
+            - 8000:8000
         volumes:
             - ./:/var/www/html
