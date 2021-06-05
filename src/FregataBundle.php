@@ -2,6 +2,7 @@
 
 namespace Fregata\FregataBundle;
 
+use Doctrine\Bundle\DoctrineBundle\DependencyInjection\Compiler\DoctrineOrmMappingsPass;
 use Fregata\Configuration\FregataCompilerPass;
 use Fregata\FregataBundle\DependencyInjection\Compiler\CommandsCompilerPass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -21,5 +22,11 @@ class FregataBundle extends Bundle
 
         // Console commands
         $container->addCompilerPass(new CommandsCompilerPass());
+
+        // Register Doctrine entities
+        $container->addCompilerPass(DoctrineOrmMappingsPass::createAnnotationMappingDriver(
+            [__NAMESPACE__ . '\Doctrine'],
+            [__DIR__ . '/Doctrine']
+        ));
     }
 }

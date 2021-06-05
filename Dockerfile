@@ -6,7 +6,7 @@ COPY --from=composer:2.0.12 /usr/bin/composer /usr/bin/composer
 COPY --from=mlocati/php-extension-installer:1.2.24 /usr/bin/install-php-extensions /usr/local/bin/
 
 RUN apk add --no-cache bash && \
-    install-php-extensions pdo_mysql && \
+    install-php-extensions pdo_pgsql && \
     wget https://get.symfony.com/cli/installer -O - | bash && \
     mv /root/.symfony/bin/symfony /usr/local/bin/symfony
 

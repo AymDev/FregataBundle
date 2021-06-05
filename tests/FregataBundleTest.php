@@ -2,6 +2,7 @@
 
 namespace Tests\Fregata\FregataBundle;
 
+use Doctrine\Bundle\DoctrineBundle\DependencyInjection\Compiler\DoctrineOrmMappingsPass;
 use Fregata\Configuration\FregataCompilerPass;
 use Fregata\FregataBundle\DependencyInjection\Compiler\CommandsCompilerPass;
 use Fregata\FregataBundle\DependencyInjection\FregataExtension;
@@ -36,5 +37,6 @@ class FregataBundleTest extends TestCase
 
         self::assertContains(FregataCompilerPass::class, $passClases);
         self::assertContains(CommandsCompilerPass::class, $passClases);
+        self::assertContains(DoctrineOrmMappingsPass::class, $passClases);
     }
 }
