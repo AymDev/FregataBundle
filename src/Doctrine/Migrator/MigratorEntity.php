@@ -54,13 +54,21 @@ class MigratorEntity
     private ?MigrationEntity $migration = null;
 
     /**
-     * @ORM\ManyToMany(targetEntity="Fregata\FregataBundle\Doctrine\Migrator\MigratorEntity")
+     * @ORM\ManyToMany(targetEntity="Fregata\FregataBundle\Doctrine\Migrator\MigratorEntity", inversedBy="previousMigrators")
+     * @var Collection<int, MigratorEntity>
      */
     private Collection $nextMigrators;
+
+    /**
+     * @ORM\ManyToMany(targetEntity="Fregata\FregataBundle\Doctrine\Migrator\MigratorEntity", mappedBy="nextMigrators")
+     * @var Collection<int, MigratorEntity>
+     */
+    private Collection $previousMigrators;
 
     public function __construct()
     {
         $this->nextMigrators = new ArrayCollection();
+        $this->previousMigrators = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -135,6 +143,7 @@ class MigratorEntity
     {
         if (!$this->nextMigrators->contains($migrator)) {
             $this->nextMigrators[] = $migrator;
+            $migrator->addPreviousMigrator($this);
         }
         return $this;
     }
@@ -143,6 +152,31 @@ class MigratorEntity
     {
         if ($this->nextMigrators->contains($migrator)) {
             $this->nextMigrators->removeElement($migrator);
+            $migrator->removePreviousMigrator($this);
+        }
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, MigratorEntity>
+     */
+    public function getPreviousMigrators(): Collection
+    {
+        return $this->previousMigrators;
+    }
+
+    public function addPreviousMigrator(self $migrator): self
+    {
+        if (!$this->previousMigrators->contains($migrator)) {
+            $this->previousMigrators[] = $migrator;
+        }
+        return $this;
+    }
+
+    public function removePreviousMigrator(self $migrator): self
+    {
+        if ($this->previousMigrators->contains($migrator)) {
+            $this->previousMigrators->removeElement($migrator);
         }
         return $this;
     }

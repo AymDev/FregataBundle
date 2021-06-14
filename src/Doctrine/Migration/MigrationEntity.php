@@ -146,7 +146,7 @@ class MigrationEntity
     }
 
     /**
-     * @return Collection<int, MigratorEntity>
+     * @return Collection<int, MigratorEntity>|MigratorEntity[]
      */
     public function getMigrators()
     {
