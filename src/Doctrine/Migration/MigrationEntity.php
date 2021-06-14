@@ -127,6 +127,22 @@ class MigrationEntity
         return $this->tasks;
     }
 
+    /**
+     * @return Collection<int, TaskEntity>
+     */
+    public function getBeforeTasks()
+    {
+        return $this->tasks->filter(fn(TaskEntity $task) => $task->getType() === TaskEntity::TASK_BEFORE);
+    }
+
+    /**
+     * @return Collection<int, TaskEntity>
+     */
+    public function getAfterTasks()
+    {
+        return $this->tasks->filter(fn(TaskEntity $task) => $task->getType() === TaskEntity::TASK_AFTER);
+    }
+
     public function addTask(TaskEntity $task): self
     {
         if (!$this->tasks->contains($task)) {
