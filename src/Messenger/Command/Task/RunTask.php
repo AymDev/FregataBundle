@@ -13,9 +13,9 @@ class RunTask implements FregataMessageInterface
 {
     private int $taskId;
 
-    public function __construct(TaskEntity $taskEntity)
+    public function __construct(int $taskId)
     {
-        $this->taskId = $taskEntity->getId();
+        $this->taskId = $taskId;
     }
 
     public function getTaskId(): int

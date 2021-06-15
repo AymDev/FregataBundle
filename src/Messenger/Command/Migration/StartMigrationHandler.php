@@ -188,8 +188,9 @@ class StartMigrationHandler implements MessageHandlerInterface
             ? $userTasks
             : $this->migrationEntity->getBeforeTasks();
 
+        /** @var TaskEntity $taskEntity */
         foreach ($tasks as $taskEntity) {
-            $this->messageBus->dispatch(new RunTask($taskEntity));
+            $this->messageBus->dispatch(new RunTask($taskEntity->getId()));
         }
     }
 
