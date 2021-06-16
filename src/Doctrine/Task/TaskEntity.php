@@ -13,14 +13,14 @@ use Fregata\FregataBundle\Doctrine\Migration\MigrationEntity;
  */
 class TaskEntity
 {
-    public const TASK_BEFORE = 0;
-    public const TASK_AFTER  = 1;
+    public const TASK_BEFORE = 'BEFORE';
+    public const TASK_AFTER  = 'AFTER';
 
-    public const STATUS_CREATED  = 0;
-    public const STATUS_RUNNING  = 1;
-    public const STATUS_FINISHED = 2;
-    public const STATUS_FAILURE  = 3;
-    public const STATUS_CANCELED = 4;
+    public const STATUS_CREATED  = 'CREATED';
+    public const STATUS_RUNNING  = 'RUNNING';
+    public const STATUS_FINISHED = 'FINISHED';
+    public const STATUS_FAILURE  = 'FAILURE';
+    public const STATUS_CANCELED = 'CANCELED';
 
     /**
      * @ORM\Id()
@@ -40,14 +40,14 @@ class TaskEntity
     private ?\DateTime $finishedAt = null;
 
     /**
-     * @ORM\Column(type="integer")
+     * @ORM\Column(type="string", length=50)
      */
-    private ?int $type = null;
+    private ?string $type = null;
 
     /**
-     * @ORM\Column(type="integer")
+     * @ORM\Column(type="string", length=50)
      */
-    private int $status = self::STATUS_CREATED;
+    private string $status = self::STATUS_CREATED;
 
     /**
      * @ORM\Column(type="text")
@@ -70,9 +70,11 @@ class TaskEntity
         return $this->startedAt;
     }
 
-    public function setStartedAt(\DateTime $startedAt): self
+    public function setStartedAt(): self
     {
-        $this->startedAt = $startedAt;
+        if (null === $this->startedAt) {
+            $this->startedAt = new \DateTime();
+        }
         return $this;
     }
 
@@ -81,32 +83,43 @@ class TaskEntity
         return $this->finishedAt;
     }
 
-    public function setFinishedAt(\DateTime $finishedAt): self
+    public function setFinishedAt(): self
     {
-        $this->finishedAt = $finishedAt;
+        if (null === $this->finishedAt) {
+            $this->finishedAt = new \DateTime();
+        }
         return $this;
     }
 
-    public function getType(): ?int
+    public function getType(): ?string
     {
         return $this->type;
     }
 
-    public function setType(int $type): self
+    public function setType(string $type): self
     {
         $this->type = $type;
         return $this;
     }
 
-    public function getStatus(): int
+    public function getStatus(): string
     {
         return $this->status;
     }
 
-    public function setStatus(int $status): self
+    public function setStatus(string $status): self
     {
         $this->status = $status;
         return $this;
+    }
+
+    public function hasEnded(): bool
+    {
+        return in_array($this->getStatus(), [
+            self::STATUS_FINISHED,
+            self::STATUS_FAILURE,
+            self::STATUS_CANCELED,
+        ]);
     }
 
     public function getServiceId(): ?string

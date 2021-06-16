@@ -35,7 +35,7 @@ abstract class AbstractMessengerTestCase extends TestCase
                 id INTEGER PRIMARY KEY, 
                 started_at TEXT DEFAULT NULL, 
                 finished_at TEXT DEFAULT NULL, 
-                status INTEGER NOT NULL, 
+                status TEXT NOT NULL, 
                 service_id TEXT NOT NULL
             );
 
@@ -45,8 +45,8 @@ abstract class AbstractMessengerTestCase extends TestCase
                 migration_id INTEGER NOT NULL, 
                 started_at TEXT DEFAULT NULL, 
                 finished_at TEXT DEFAULT NULL, 
-                type INTEGER NOT NULL, 
-                status INTEGER NOT NULL, 
+                type TEXT NOT NULL, 
+                status TEXT NOT NULL, 
                 service_id TEXT NOT NULL,
                 FOREIGN KEY (migration_id) REFERENCES fregata_migration(id)
             );
@@ -57,7 +57,7 @@ abstract class AbstractMessengerTestCase extends TestCase
                 migration_id INTEGER NOT NULL, 
                 started_at TEXT DEFAULT NULL, 
                 finished_at TEXT DEFAULT NULL, 
-                status INTEGER NOT NULL, 
+                status TEXT NOT NULL, 
                 service_id TEXT NOT NULL, 
                 FOREIGN KEY (migration_id) REFERENCES fregata_migration(id)
             );

@@ -15,15 +15,15 @@ use Fregata\FregataBundle\Doctrine\Task\TaskEntity;
  */
 class MigrationEntity
 {
-    public const STATUS_CREATED           = 0;
-    public const STATUS_BEFORE_TASKS      = 1;
-    public const STATUS_CORE_BEFORE_TASKS = 2;
-    public const STATUS_MIGRATORS         = 3;
-    public const STATUS_CORE_AFTER_TASKS  = 4;
-    public const STATUS_AFTER_TASKS       = 5;
-    public const STATUS_FINISHED          = 6;
-    public const STATUS_FAILURE           = 7;
-    public const STATUS_CANCELED          = 8;
+    public const STATUS_CREATED           = 'CREATED';
+    public const STATUS_BEFORE_TASKS      = 'BEFORE_TASKS';
+    public const STATUS_CORE_BEFORE_TASKS = 'CORE_BEFORE_TASKS';
+    public const STATUS_MIGRATORS         = 'MIGRATORS';
+    public const STATUS_CORE_AFTER_TASKS  = 'CORE_AFTER_TASKS';
+    public const STATUS_AFTER_TASKS       = 'AFTER_TASKS';
+    public const STATUS_FINISHED          = 'FINISHED';
+    public const STATUS_FAILURE           = 'FAILURE';
+    public const STATUS_CANCELED          = 'CANCELED';
 
     /**
      * @ORM\Id()
@@ -43,9 +43,9 @@ class MigrationEntity
     private ?\DateTime $finishedAt = null;
 
     /**
-     * @ORM\Column(type="integer")
+     * @ORM\Column(type="string", length=50)
      */
-    private int $status = self::STATUS_CREATED;
+    private string $status = self::STATUS_CREATED;
 
     /**
      * @ORM\Column(type="text")
@@ -80,9 +80,11 @@ class MigrationEntity
         return $this->startedAt;
     }
 
-    public function setStartedAt(\DateTime $startedAt): self
+    public function setStartedAt(): self
     {
-        $this->startedAt = $startedAt;
+        if (null === $this->startedAt) {
+            $this->startedAt = new \DateTime();
+        }
         return $this;
     }
 
@@ -91,18 +93,20 @@ class MigrationEntity
         return $this->finishedAt;
     }
 
-    public function setFinishedAt(\DateTime $finishedAt): self
+    public function setFinishedAt(): self
     {
-        $this->finishedAt = $finishedAt;
+        if (null === $this->finishedAt) {
+            $this->finishedAt = new \DateTime();
+        }
         return $this;
     }
 
-    public function getStatus(): int
+    public function getStatus(): string
     {
         return $this->status;
     }
 
-    public function setStatus(int $status): self
+    public function setStatus(string $status): self
     {
         $this->status = $status;
         return $this;

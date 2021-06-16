@@ -118,21 +118,15 @@ class StartMigrationHandler implements MessageHandlerInterface
     /**
      * Create a task entity based on task service and type
      */
-    private function createTaskEntity(TaskInterface $task, int $type): void
+    private function createTaskEntity(TaskInterface $task, string $type): void
     {
-        // Check task type
-        $serviceTypes = [
-            TaskEntity::TASK_BEFORE => 'before',
-            TaskEntity::TASK_AFTER  => 'after',
-        ];
-
-        $serviceType = $serviceTypes[$type] ?? null;
-        if (null === $serviceType) {
-            throw new \LogicException(sprintf('Unknown "%s" task type.', $type));
-        }
-
         // Service ID
-        $taskServiceId = sprintf('%s.task.%s.%s', $this->servicePrefix, $serviceType, $this->getServiceId($task));
+        $taskServiceId = sprintf(
+            '%s.task.%s.%s',
+            $this->servicePrefix,
+            mb_strtolower($type),
+            $this->getServiceId($task)
+        );
 
         // Entity
         $taskEntity = (new TaskEntity())
