@@ -109,7 +109,6 @@ class StartMigrationHandler implements MessageHandlerInterface
     {
         $this->migrationEntity = (new MigrationEntity())
             ->setServiceId($migrationId)
-            ->setStatus(MigrationEntity::STATUS_CREATED)
         ;
 
         $this->entityManager->persist($this->migrationEntity);
@@ -132,7 +131,6 @@ class StartMigrationHandler implements MessageHandlerInterface
         $taskEntity = (new TaskEntity())
             ->setServiceId($taskServiceId)
             ->setType($type)
-            ->setStatus(TaskEntity::STATUS_CREATED)
         ;
 
         $this->migrationEntity->addTask($taskEntity);
@@ -149,7 +147,6 @@ class StartMigrationHandler implements MessageHandlerInterface
 
         $migratorEntity = (new MigratorEntity())
             ->setServiceId($migratorServiceId)
-            ->setStatus(MigratorEntity::STATUS_CREATED)
         ;
 
         // Manage dependencies directly as migrators are already sorted
