@@ -2,11 +2,9 @@
 
 namespace Tests\Fregata\FregataBundle\Messenger;
 
-use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\Mapping\UnderscoreNamingStrategy;
-use Doctrine\ORM\Tools\Setup;
-use PHPUnit\Framework\TestCase;
+use Psr\Log\Test\TestLogger;
+use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\MessageBus;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -15,15 +13,18 @@ use Symfony\Component\Messenger\Transport\InMemoryTransport;
 use Symfony\Component\Messenger\Transport\Sender\SendersLocatorInterface;
 use Symfony\Component\Messenger\Transport\Serialization\PhpSerializer;
 
-abstract class AbstractMessengerTestCase extends TestCase
+abstract class AbstractMessengerTestCase extends KernelTestCase
 {
     protected ?EntityManagerInterface $entityManager = null;
     protected ?MessageBusInterface $messageBus = null;
     protected ?InMemoryTransport $messengerTransport = null;
+    protected ?TestLogger $logger = null;
 
     protected function setUp(): void
     {
         parent::setUp();
+
+        self::bootKernel();
 
         $this->getEntityManager()->getConnection()->executeStatement(
             /** @lang SQLite */
@@ -74,25 +75,17 @@ abstract class AbstractMessengerTestCase extends TestCase
             PRAGMA foreign_keys = ON;
             SQL
         );
-
-
     }
 
     protected function getEntityManager(): EntityManagerInterface
     {
-        if (null === $this->entityManager) {
-            $configuration = Setup::createAnnotationMetadataConfiguration(
-                [__DIR__ . '/../src/Doctrine'],
-                true,
-                null,
-                null,
-                false
-            );
-            $configuration->setNamingStrategy(new UnderscoreNamingStrategy(CASE_LOWER, true));
+        return static::getContainer()->get(EntityManagerInterface::class);
+    }
 
-            $this->entityManager = EntityManager::create(['url' => 'sqlite:///:memory:'], $configuration);
-        }
-        return $this->entityManager;
+    protected function getLogger(): TestLogger
+    {
+        $this->logger ??= new TestLogger();
+        return $this->logger;
     }
 
     protected function getMessengerTransport(): InMemoryTransport
