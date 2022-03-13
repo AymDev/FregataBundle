@@ -39,12 +39,12 @@ class TestKernel extends Kernel
         });
     }
 
-    public function getCacheDir()
+    public function getCacheDir(): string
     {
         return __DIR__ . '/build/cache';
     }
 
-    public function getLogDir()
+    public function getLogDir(): string
     {
         return __DIR__ . '/build/log';
     }
