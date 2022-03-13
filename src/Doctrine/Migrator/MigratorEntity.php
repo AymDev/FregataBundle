@@ -113,6 +113,15 @@ class MigratorEntity
         return $this;
     }
 
+    public function hasEnded(): bool
+    {
+        return in_array($this->getStatus(), [
+            self::STATUS_FINISHED,
+            self::STATUS_FAILURE,
+            self::STATUS_CANCELED,
+        ]);
+    }
+
     public function getServiceId(): ?string
     {
         return $this->serviceId;

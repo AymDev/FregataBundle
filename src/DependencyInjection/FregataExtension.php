@@ -7,6 +7,7 @@ use Fregata\FregataBundle\Doctrine\Migration\MigrationRepository;
 use Fregata\FregataBundle\Doctrine\Migrator\MigratorRepository;
 use Fregata\FregataBundle\Doctrine\Task\TaskRepository;
 use Fregata\FregataBundle\Messenger\Command\Migration\StartMigrationHandler;
+use Fregata\FregataBundle\Messenger\Command\Migrator\RunMigratorHandler;
 use Fregata\FregataBundle\Messenger\Command\Task\RunTaskHandler;
 use Symfony\Component\DependencyInjection\Compiler\ServiceLocatorTagPass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -74,5 +75,20 @@ class FregataExtension extends FrameworkExtension
             ->setArgument('$serviceLocator', $serviceLocator)
         ;
         $container->setDefinition(self::HANDLERS_ID . '.run_task', $runTaskHandlerDefinition);
+
+        // Run a migrator
+        $migratorDefinitions = array_keys($container->findTaggedServiceIds(self::TAG_MIGRATOR));
+        $serviceLocator = ServiceLocatorTagPass::register($container, array_combine(
+            $migratorDefinitions,
+            array_map(fn (string $migratorId) => new Reference($migratorId), $migratorDefinitions)
+        ));
+
+        $runMigratorHandlerDefinition = new Definition(RunMigratorHandler::class);
+        $runMigratorHandlerDefinition
+            ->setAutowired(true)
+            ->addTag('messenger.message_handler')
+            ->setArgument('$serviceLocator', $serviceLocator)
+        ;
+        $container->setDefinition(self::HANDLERS_ID . '.run_migrator', $runMigratorHandlerDefinition);
     }
 }

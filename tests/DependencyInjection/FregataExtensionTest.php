@@ -5,7 +5,9 @@ namespace Tests\Fregata\FregataBundle\DependencyInjection;
 use Fregata\Configuration\FregataExtension as FrameworkExtension;
 use Fregata\FregataBundle\DependencyInjection\FregataExtension;
 use Fregata\FregataBundle\Messenger\Command\Migration\StartMigrationHandler;
+use Fregata\FregataBundle\Messenger\Command\Migrator\RunMigratorHandler;
 use Fregata\FregataBundle\Messenger\Command\Task\RunTaskHandler;
+use Fregata\Migration\Migrator\MigratorInterface;
 use Fregata\Migration\TaskInterface;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -29,6 +31,7 @@ class FregataExtensionTest extends TestCase
 
         self::assertContains(StartMigrationHandler::class, $handlers);
         self::assertContains(RunTaskHandler::class, $handlers);
+        self::assertContains(RunMigratorHandler::class, $handlers);
     }
 
     /**
@@ -73,5 +76,47 @@ class FregataExtensionTest extends TestCase
         self::assertTrue($serviceLocator->has($taskId));
         $task = $serviceLocator->get($taskId);
         self::assertInstanceOf($taskClass, $task);
+    }
+
+    /**
+     * The migrator handler must have a configured service locator
+     */
+    public function testMigratorHandlerServiceLocatorServices(): void
+    {
+        $container = new ContainerBuilder();
+        $extension = new FregataExtension();
+
+        $migrator = self::getMockForAbstractClass(MigratorInterface::class);
+        $migratorClass = get_class($migrator);
+
+        $configuration = [
+            'migrations' => [
+                'test_migration' => [
+                    'migrators' => [
+                        $migratorClass,
+                    ]
+                ]
+            ]
+        ];
+        $extension->load([$configuration], $container);
+
+        // Get the service locator
+        $serviceLocatorReference = $container->findDefinition('fregata.messenger.handler.run_migrator')
+            ->getArgument('$serviceLocator');
+        self::assertInstanceOf(Reference::class, $serviceLocatorReference);
+
+        $serviceLocatorId = (string) $serviceLocatorReference;
+        $serviceLocator = $container->get($serviceLocatorId);
+        self::assertInstanceOf(ServiceLocator::class, $serviceLocator);
+
+        // Get the migrator
+        $migrators = $container->findTaggedServiceIds(FrameworkExtension::TAG_MIGRATOR);
+        self::assertCount(1, $migrators);
+
+        // Locate the task service
+        $migratorId = array_keys($migrators)[0];
+        self::assertTrue($serviceLocator->has($migratorId));
+        $task = $serviceLocator->get($migratorId);
+        self::assertInstanceOf($migratorClass, $task);
     }
 }
