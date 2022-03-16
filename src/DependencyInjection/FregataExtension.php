@@ -58,7 +58,10 @@ class FregataExtension extends FrameworkExtension
     {
         // Start a migration
         $startMigrationHandlerDefinition = new Definition(StartMigrationHandler::class);
-        $startMigrationHandlerDefinition->addTag('messenger.message_handler');
+        $startMigrationHandlerDefinition
+            ->setAutowired(true)
+            ->addTag('messenger.message_handler')
+        ;
         $container->setDefinition(self::HANDLERS_ID . '.start_migration', $startMigrationHandlerDefinition);
 
         // Execute a task
