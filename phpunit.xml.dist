@@ -4,7 +4,7 @@
          xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.5/phpunit.xsd"
          backupGlobals="false"
          colors="true"
-         bootstrap="vendor/autoload.php">
+         bootstrap="tests/bootstrap.php">
 
     <php>
         <ini name="error_reporting" value="-1"/>
@@ -26,4 +26,8 @@
             <directory suffix=".php">src</directory>
         </include>
     </coverage>
+
+    <extensions>
+        <extension class="DAMA\DoctrineTestBundle\PHPUnit\PHPUnitExtension" />
+    </extensions>
 </phpunit>

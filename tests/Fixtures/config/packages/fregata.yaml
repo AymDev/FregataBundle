@@ -1,0 +1,10 @@
+fregata:
+    migrations:
+        test_migration:
+            tasks:
+                before:
+                    - App\Fregata\TestMigration\BeforeTask
+                after:
+                    - App\Fregata\TestMigration\AfterTask
+            migrators:
+                - App\Fregata\TestMigration\Migrator

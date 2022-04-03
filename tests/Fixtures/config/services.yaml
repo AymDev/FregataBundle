@@ -1,0 +1,8 @@
+parameters:
+    kernel.secret: 'test'
+
+services:
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/TestKernel.php'

@@ -1,0 +1,3 @@
+fregata:
+    resource: "@FregataBundle/Resources/config/routes.xml"
+    prefix: /fregata

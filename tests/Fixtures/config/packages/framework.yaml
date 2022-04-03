@@ -1,0 +1,10 @@
+framework:
+    test: true
+
+    router:
+        utf8: true
+        resource: kernel::loadRoutes
+        type: service
+
+    messenger:
+        reset_on_message: true

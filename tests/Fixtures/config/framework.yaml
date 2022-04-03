@@ -1,5 +1,0 @@
-framework:
-    test: true
-
-    messenger:
-        reset_on_message: true
