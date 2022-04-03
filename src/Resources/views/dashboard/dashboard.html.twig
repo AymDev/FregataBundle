@@ -1,0 +1,39 @@
+{% extends "@Fregata/base.html.twig" %}
+
+{% block page_title %}
+    Dashboard
+{% endblock %}
+
+{% block body %}
+    <div class="section">
+        <h1 class="title">
+            {% if running is not empty %}
+                Running migrations: {{ running|length }}
+            {% elseif last is not null %}
+                Last run migration:
+            {% else %}
+                <i class="fa-solid fa-box-open"></i>
+                No migration yet !
+            {% endif %}
+        </h1>
+
+        {% if running is not empty %}
+            {% include '@Fregata/_includes/migration/table.html.twig' with {
+                migrations_list: running
+            } %}
+        {% elseif last is not null %}
+            {% include '@Fregata/_includes/migration/table.html.twig' with {
+                migrations_list: {last}
+            } %}
+        {% else %}
+            <div class="notification is-info is-light">
+                You haven't run any migration yet !
+                <br>
+                <br>
+                Once you configured your first migration, it will be listed in the <a href="{{ path('fregata_migration_list') }}">migrations</a> page.
+                You will be able to start it from the <a href="{{ path('fregata_run_new') }}">new run</a> page.
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}
+

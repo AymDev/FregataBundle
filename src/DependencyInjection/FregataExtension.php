@@ -3,6 +3,9 @@
 namespace Fregata\FregataBundle\DependencyInjection;
 
 use Fregata\Configuration\FregataExtension as FrameworkExtension;
+use Fregata\FregataBundle\Controller\DashboardController;
+use Fregata\FregataBundle\Controller\MigrationController;
+use Fregata\FregataBundle\Controller\RunController;
 use Fregata\FregataBundle\Doctrine\Migration\MigrationRepository;
 use Fregata\FregataBundle\Doctrine\Migrator\MigratorRepository;
 use Fregata\FregataBundle\Doctrine\Task\TaskRepository;
@@ -18,6 +21,7 @@ class FregataExtension extends FrameworkExtension
 {
     private const HANDLERS_ID = 'fregata.messenger.handler';
     private const REPOSITORIES_ID = 'fregata.doctrine.repository';
+    private const CONTROLLERS_ID = 'fregata.controller';
 
     public function load(array $configs, ContainerBuilder $container): void
     {
@@ -28,6 +32,9 @@ class FregataExtension extends FrameworkExtension
 
         // Register Messenger handlers
         $this->registerMessengerServices($container);
+
+        // Register controllers
+        $this->registerControllers($container);
     }
 
     private function registerDoctrineServices(ContainerBuilder $container)
@@ -93,5 +100,26 @@ class FregataExtension extends FrameworkExtension
             ->setArgument('$serviceLocator', $serviceLocator)
         ;
         $container->setDefinition(self::HANDLERS_ID . '.run_migrator', $runMigratorHandlerDefinition);
+    }
+
+    private function registerControllers(ContainerBuilder $container): void
+    {
+        $container
+            ->register(self::CONTROLLERS_ID . '.dashboard', DashboardController::class)
+            ->addMethodCall('setContainer', [new Reference('service_container')])
+            ->addTag('controller.service_arguments')
+        ;
+
+        $container
+            ->register(self::CONTROLLERS_ID . '.run', RunController::class)
+            ->addMethodCall('setContainer', [new Reference('service_container')])
+            ->addTag('controller.service_arguments')
+        ;
+
+        $container
+            ->register(self::CONTROLLERS_ID . '.migration', MigrationController::class)
+            ->addMethodCall('setContainer', [new Reference('service_container')])
+            ->addTag('controller.service_arguments')
+        ;
     }
 }

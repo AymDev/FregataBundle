@@ -3,6 +3,9 @@
 namespace Tests\Fregata\FregataBundle\DependencyInjection;
 
 use Fregata\Configuration\FregataExtension as FrameworkExtension;
+use Fregata\FregataBundle\Controller\DashboardController;
+use Fregata\FregataBundle\Controller\MigrationController;
+use Fregata\FregataBundle\Controller\RunController;
 use Fregata\FregataBundle\DependencyInjection\FregataExtension;
 use Fregata\FregataBundle\Messenger\Command\Migration\StartMigrationHandler;
 use Fregata\FregataBundle\Messenger\Command\Migrator\RunMigratorHandler;
@@ -118,5 +121,25 @@ class FregataExtensionTest extends TestCase
         self::assertTrue($serviceLocator->has($migratorId));
         $task = $serviceLocator->get($migratorId);
         self::assertInstanceOf($migratorClass, $task);
+    }
+
+    /**
+     * The user interface controllers must be registered
+     */
+    public function testControllersAreRegistered(): void
+    {
+        $container = new ContainerBuilder();
+        $extension = new FregataExtension();
+        $extension->load([], $container);
+
+        $controllers = $container->findTaggedServiceIds('controller.service_arguments');
+        $controllers = array_map(
+            fn(string $controllerId) => $container->getDefinition($controllerId)->getClass(),
+            array_keys($controllers)
+        );
+
+        self::assertContains(DashboardController::class, $controllers);
+        self::assertContains(MigrationController::class, $controllers);
+        self::assertContains(RunController::class, $controllers);
     }
 }

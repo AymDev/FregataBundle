@@ -1,0 +1,75 @@
+<table class="table is-fullwidth">
+    <thead>
+    <tr>
+        <th><i class="fa-solid fa-hashtag"></i></th>
+        <th>Migration</th>
+        <th>Status</th>
+        <th><i class="fa-solid fa-clock"></i></th>
+        <th>Before tasks</th>
+        <th>Migrators</th>
+        <th>After tasks</th>
+        <th></th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for migration in migrations_list %}
+        {# @var migration \Fregata\FregataBundle\Doctrine\Migration\MigrationEntity #}
+        <tr>
+            <td>{{ migration.id }}</td>
+            <td>
+                <a href="{{ path('fregata_migration_details', {service_id: migration.serviceId}) }}">
+                    {{ migration.serviceId }}
+                </a>
+            </td>
+            <td>{% include '@Fregata/_includes/migration/status_tag.html.twig' %}</td>
+            <td>
+                {% if migration.startedAt is not null %}
+                    {{ migration.startedAt|date('d/m/Y H:i:s') }}
+                {% else %}
+                    <i class="fa-solid fa-ellipsis"></i>
+                {% endif %}
+                <i class="fa-solid fa-slash fa-rotate-90"></i>
+                {% if migration.finishedAt is not null %}
+                    {{ migration.finishedAt|date('d/m/Y H:i:s') }}
+                {% else %}
+                    <i class="fa-solid fa-ellipsis"></i>
+                {% endif %}
+
+                {% if migration.startedAt is not null and migration.finishedAt is not null %}
+                    {% set duration = migration.finishedAt.diff(migration.startedAt) %}
+                    <div class="tags has-addons mt-1">
+                        <span class="tag is-info is-light">
+                            <i class="fa-solid fa-stopwatch"></i>
+                        </span>
+                        <span class="tag is-info">
+                            {% if duration.days > 0 %}
+                                {{ duration.days }} days
+                                {{ duration.h }} hours
+                            {% elseif duration.h > 0 %}
+                                {{ duration.h }} hours
+                                {{ duration.i }} minutes
+                            {% elseif duration.i > 0 %}
+                                {{ duration.i }} minutes
+                                {{ duration.s }} seconds
+                            {% elseif duration.s > 0 %}
+                                {{ duration.s }} seconds
+                            {% endif %}
+                        </span>
+                    </div>
+                {% endif %}
+            </td>
+            <td>{{ migration.beforeTasks|length }}</td>
+            <td>{{ migration.migrators|length }}</td>
+            <td>{{ migration.afterTasks|length }}</td>
+            <td>
+                <a href="{{ path('fregata_run_details', {id: migration.id}) }}" class="button is-info is-outlined">
+                    <span class="icon is-small">
+                        <i class="fa-solid fa-eye"></i>
+                    </span>
+                    <span>View</span>
+                </a>
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
