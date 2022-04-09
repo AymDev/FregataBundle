@@ -8,6 +8,6 @@
     </route>
 
     <route id="fregata_migration_details" path="/migration/{service_id}" methods="GET">
-        <default key="_controller">fregata.controller.migration::migrationDetails</default>
+        <default key="_controller">fregata.controller.migration::migrationDetailsAction</default>
     </route>
 </routes>

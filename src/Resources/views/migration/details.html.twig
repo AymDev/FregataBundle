@@ -1,0 +1,94 @@
+{% extends "@Fregata/base.html.twig" %}
+
+{% block page_title %}
+    Migration "{{ migration_name }}"
+{% endblock %}
+
+{% block js %}
+    <script src="{{ asset('bundles/fregata/js/tab.js') }}"></script>
+{% endblock %}
+
+
+{% block body %}
+    <div class="section">
+        <h1 class="title">
+            Migration "{{ migration_name }}"
+        </h1>
+
+        {% if service is null %}
+            <div class="message is-info">
+                <div class="message-header">
+                    <p>
+                        <span class="icon"><i class="fa-solid fa-box-archive"></i></span>
+                        Archived migration
+                    </p>
+                </div>
+                <div class="message-body">
+                    This migration is not registered anymore but its run history is still available.
+                </div>
+            </div>
+        {% else %}
+            <nav class="panel js--tabs">
+                <p class="panel-heading">
+                    <i class="fa-solid fa-cubes"></i>
+                    Components
+                </p>
+                <p class="panel-tabs">
+                    <a data-tab-target="before">
+                        Before tasks ({{ service.beforeTasks|length }})
+                    </a>
+                    <a class="is-active" data-tab-target="migrator">
+                        Migrators ({{ service.migrators|length }})
+                    </a>
+                    <a data-tab-target="after">
+                        After Tasks ({{ service.afterTasks|length }})
+                    </a>
+                </p>
+
+                <div class="is-hidden" data-tab="before">
+                    {% for beforeTask in service.beforeTasks %}
+                        <div class="panel-block">
+                        <span class="panel-icon">
+                            <i class="fa-solid fa-gear"></i>
+                        </span>
+                            {{ beforeTask|class }}
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <div data-tab="migrator">
+                    {% for migrator in service.migrators %}
+                        <div class="panel-block">
+                        <span class="panel-icon">
+                            <i class="fa-solid fa-truck-fast"></i>
+                        </span>
+                            {{ migrator|class }}
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <div class="is-hidden" data-tab="after">
+                    {% for afterTask in service.afterTasks %}
+                        <div class="panel-block">
+                        <span class="panel-icon">
+                            <i class="fa-solid fa-gear"></i>
+                        </span>
+                            {{ afterTask|class }}
+                        </div>
+                    {% endfor %}
+                </div>
+            </nav>
+        {% endif %}
+
+        <h2 class="title">
+            Runs: {{ migrations_list|length }}
+        </h2>
+        {% include '@Fregata/_includes/migration/table.html.twig' %}
+        {% include '@Fregata/_includes/pagination.html.twig' with {
+            total: migrations_list|length,
+            offset: pagination_offset,
+            current: pagination_current
+        } %}
+    </div>
+{% endblock %}
+

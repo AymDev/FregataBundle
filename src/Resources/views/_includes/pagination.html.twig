@@ -1,0 +1,29 @@
+{% set total_pages = (total / offset)|round(0, 'ceil') %}
+{% set min_link = path(app.request.attributes.get('_route'), app.request.attributes.get('_route_params')|default({})|merge(app.request.query.all)|merge({page: 1})) %}
+{% set prev_link = path(app.request.attributes.get('_route'), app.request.attributes.get('_route_params')|default({})|merge(app.request.query.all)|merge({page: current - 1})) %}
+{% set next_link = path(app.request.attributes.get('_route'), app.request.attributes.get('_route_params')|default({})|merge(app.request.query.all)|merge({page: current + 1})) %}
+{% set max_link = path(app.request.attributes.get('_route'), app.request.attributes.get('_route_params')|default({})|merge(app.request.query.all)|merge({page: total_pages})) %}
+
+<nav class="pagination is-centered">
+    <a class="pagination-previous" {{ current <= 1 ? 'disabled' : '' }} href="{{ prev_link }}">
+        <span class="icon"><i class="fa-solid fa-angle-left"></i></span>
+    </a>
+    <a class="pagination-next" {{ current >= total_pages ? 'disabled' : '' }} href="{{ next_link }}">
+        <span class="icon"><i class="fa-solid fa-angle-right"></i></span>
+    </a>
+    <ul class="pagination-list">
+        <li><a class="pagination-link" href="{{ min_link }}">1</a></li>
+        <li><span class="pagination-ellipsis">&hellip;</span></li>
+
+        {% if current > 1 %}
+            <li><a class="pagination-link" href="{{ prev_link }}">{{ current - 1 }}</a></li>
+        {% endif %}
+        <li><a class="pagination-link is-current">{{ current }}</a></li>
+        {% if current < total_pages %}
+            <li><a class="pagination-link" href="{{ next_link }}">{{ current + 1 }}</a></li>
+        {% endif %}
+
+        <li><span class="pagination-ellipsis">&hellip;</span></li>
+        <li><a class="pagination-link" href="{{ max_link }}">{{ total_pages }}</a></li>
+    </ul>
+</nav>

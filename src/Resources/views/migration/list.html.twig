@@ -1,0 +1,45 @@
+{% extends "@Fregata/base.html.twig" %}
+
+{% block page_title %}
+    Migrations
+{% endblock %}
+
+{% block body %}
+    <div class="section">
+        <h1 class="title">
+            Migrations
+        </h1>
+
+        <table class="table is-fullwidth">
+            <thead>
+            <tr>
+                <th>Name</th>
+                <th>Before tasks</th>
+                <th>Migrators</th>
+                <th>After tasks</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for name, migration in migrations_list %}
+                {# @var migration \Fregata\Migration\Migration #}
+                <tr>
+                    <td>{{ name }}</td>
+                    <td>{{ migration.beforeTasks|length }}</td>
+                    <td>{{ migration.migrators|length }}</td>
+                    <td>{{ migration.afterTasks|length }}</td>
+                    <td>
+                        <a href="{{ path('fregata_migration_details', {service_id: name}) }}" class="button is-info is-outlined">
+                            <span class="icon is-small">
+                                <i class="fa-solid fa-eye"></i>
+                            </span>
+                            <span>View</span>
+                        </a>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}
+

@@ -12,6 +12,7 @@ use Fregata\FregataBundle\Doctrine\Task\TaskRepository;
 use Fregata\FregataBundle\Messenger\Command\Migration\StartMigrationHandler;
 use Fregata\FregataBundle\Messenger\Command\Migrator\RunMigratorHandler;
 use Fregata\FregataBundle\Messenger\Command\Task\RunTaskHandler;
+use Fregata\FregataBundle\Twig\FregataTwigExtension;
 use Symfony\Component\DependencyInjection\Compiler\ServiceLocatorTagPass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -22,6 +23,7 @@ class FregataExtension extends FrameworkExtension
     private const HANDLERS_ID = 'fregata.messenger.handler';
     private const REPOSITORIES_ID = 'fregata.doctrine.repository';
     private const CONTROLLERS_ID = 'fregata.controller';
+    private const TWIG_ID = 'fregata.twig';
 
     public function load(array $configs, ContainerBuilder $container): void
     {
@@ -35,6 +37,9 @@ class FregataExtension extends FrameworkExtension
 
         // Register controllers
         $this->registerControllers($container);
+
+        // Register Twig services
+        $this->registerTwigServices($container);
     }
 
     private function registerDoctrineServices(ContainerBuilder $container)
@@ -120,6 +125,14 @@ class FregataExtension extends FrameworkExtension
             ->register(self::CONTROLLERS_ID . '.migration', MigrationController::class)
             ->addMethodCall('setContainer', [new Reference('service_container')])
             ->addTag('controller.service_arguments')
+        ;
+    }
+
+    private function registerTwigServices(ContainerBuilder $container): void
+    {
+        $container
+            ->register(self::TWIG_ID . '.extension', FregataTwigExtension::class)
+            ->addTag('twig.extension')
         ;
     }
 }
