@@ -5,6 +5,7 @@ namespace Fregata\FregataBundle\DependencyInjection;
 use Fregata\Configuration\FregataExtension as FrameworkExtension;
 use Fregata\FregataBundle\Controller\DashboardController;
 use Fregata\FregataBundle\Controller\MigrationController;
+use Fregata\FregataBundle\Controller\MigratorSorter;
 use Fregata\FregataBundle\Controller\RunController;
 use Fregata\FregataBundle\Doctrine\Migration\MigrationRepository;
 use Fregata\FregataBundle\Doctrine\Migrator\MigratorRepository;
@@ -130,9 +131,25 @@ class FregataExtension extends FrameworkExtension
 
     private function registerTwigServices(ContainerBuilder $container): void
     {
+        // Map of task classes for service IDs
+        $taskIds = array_keys($container->findTaggedServiceIds(self::TAG_TASK));
+        $taskClasses = array_map(fn(string $serviceId) => $container->getDefinition($serviceId)->getClass(), $taskIds);
+        $taskMap = array_combine($taskIds, $taskClasses);
+
+        // Map of migrator classes for service IDs
+        $migratorIds = array_keys($container->findTaggedServiceIds(self::TAG_MIGRATOR));
+        $migratorClasses = array_map(fn(string $serviceId) => $container->getDefinition($serviceId)->getClass(), $migratorIds);
+        $migratorMap = array_combine($migratorIds, $migratorClasses);
+
         $container
             ->register(self::TWIG_ID . '.extension', FregataTwigExtension::class)
             ->addTag('twig.extension')
+            ->setArgument('$taskClassMap', $taskMap)
+            ->setArgument('$migratorClassMap', $migratorMap)
         ;
+
+        // Migrator sorter service
+        $container->register(self::TWIG_ID . '.migrator_sorter', MigratorSorter::class);
+        $container->register(MigratorSorter::class, MigratorSorter::class);
     }
 }

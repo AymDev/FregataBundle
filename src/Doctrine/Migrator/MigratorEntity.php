@@ -5,6 +5,7 @@ namespace Fregata\FregataBundle\Doctrine\Migrator;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Fregata\FregataBundle\Doctrine\FregataComponentInterface;
 use Fregata\FregataBundle\Doctrine\Migration\MigrationEntity;
 
 /**
@@ -12,7 +13,7 @@ use Fregata\FregataBundle\Doctrine\Migration\MigrationEntity;
  * @ORM\Entity(repositoryClass="Fregata\FregataBundle\Doctrine\Migrator\MigratorRepository")
  * @ORM\Table(name="fregata_migrator")
  */
-class MigratorEntity
+class MigratorEntity implements FregataComponentInterface
 {
     public const STATUS_CREATED  = 'CREATED';
     public const STATUS_RUNNING  = 'RUNNING';
@@ -182,6 +183,7 @@ class MigratorEntity
     {
         if (!$this->previousMigrators->contains($migrator)) {
             $this->previousMigrators[] = $migrator;
+            $migrator->addNextMigrator($this);
         }
         return $this;
     }
@@ -190,6 +192,7 @@ class MigratorEntity
     {
         if ($this->previousMigrators->contains($migrator)) {
             $this->previousMigrators->removeElement($migrator);
+            $migrator->removeNextMigrator($this);
         }
         return $this;
     }

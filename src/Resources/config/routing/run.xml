@@ -12,7 +12,7 @@
     </route>
 
     <route id="fregata_run_details" path="/run/{id}" methods="GET">
-        <default key="_controller">fregata.controller.run::runDetails</default>
+        <default key="_controller">fregata.controller.run::runDetailsAction</default>
         <requirement key="id">\d+</requirement>
     </route>
 </routes>

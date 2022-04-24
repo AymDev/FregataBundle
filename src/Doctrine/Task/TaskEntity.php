@@ -2,8 +2,8 @@
 
 namespace Fregata\FregataBundle\Doctrine\Task;
 
-use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Fregata\FregataBundle\Doctrine\FregataComponentInterface;
 use Fregata\FregataBundle\Doctrine\Migration\MigrationEntity;
 
 /**
@@ -11,7 +11,7 @@ use Fregata\FregataBundle\Doctrine\Migration\MigrationEntity;
  * @ORM\Entity(repositoryClass="Fregata\FregataBundle\Doctrine\Task\TaskRepository")
  * @ORM\Table(name="fregata_task")
  */
-class TaskEntity
+class TaskEntity implements FregataComponentInterface
 {
     public const TASK_BEFORE = 'BEFORE';
     public const TASK_AFTER  = 'AFTER';

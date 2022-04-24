@@ -1,0 +1,155 @@
+{% extends "@Fregata/base.html.twig" %}
+
+{% block page_title %}
+    {{ migration.serviceId }} - run #{{ migration.id }}
+{% endblock %}
+
+{% block css %}
+    <link rel="stylesheet" href="{{ asset('bundles/fregata/css/run/details.css') }}">
+{% endblock %}
+
+{% block js %}
+    <script src="{{ asset('bundles/fregata/js/tab.js') }}"></script>
+{% endblock %}
+
+{% block body %}
+    <section class="hero is-primary is-light">
+        <div class="hero-body">
+            <p class="title">
+                Migration {{ migration.serviceId }}
+            </p>
+            <p class="subtitle">
+                Run #{{ migration.id }}
+            </p>
+        </div>
+    </section>
+
+    <div class="section">
+        <div class="columns is-multiline is-vcentered is-mobile">
+            {{ _self.migration_card('Migration', '<a href="' ~ path('fregata_migration_details', {service_id: migration.serviceId}) ~ '">' ~ migration.serviceId ~ '</a>') }}
+            {{ _self.migration_card('Status', include('@Fregata/_includes/status_tag.html.twig', {
+                component: migration,
+                center: true
+            })) }}
+            {{ _self.migration_card('Time', include('@Fregata/_includes/time_stats.html.twig', {component: migration})) }}
+            {{ _self.migration_card('Before Tasks', '<p class="title">' ~ migration.beforeTasks|length ~ '</p>') }}
+            {{ _self.migration_card('Migrators', '<p class="title">' ~ migration.migrators|length ~ '</p>') }}
+            {{ _self.migration_card('After Tasks', '<p class="title">' ~ migration.afterTasks|length ~ '</p>') }}
+        </div>
+
+        <div class="js--tabs">
+            <div class="tabs is-centered">
+                <ul>
+                    <li class="{{ migration.status in ['BEFORE_TASKS', 'CORE_BEFORE_TASKS'] ? 'is-active' : '' }}" data-tab-active="before">
+                        <a data-tab-target="before">
+                            Before Tasks
+                        </a>
+                    </li>
+                    <li class="{{ migration.status in ['BEFORE_TASKS', 'CORE_BEFORE_TASKS', 'CORE_AFTER_TASKS', 'AFTER_TASKS'] ? '' : 'is-active' }}" data-tab-active="migrator">
+                        <a data-tab-target="migrator">
+                            Migrators
+                        </a>
+                    </li>
+                    <li class="{{ migration.status in ['CORE_AFTER_TASKS', 'AFTER_TASKS'] ? 'is-active' : '' }}" data-tab-active="after">
+                        <a data-tab-target="after">
+                            After Tasks
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="{{ migration.status in ['BEFORE_TASKS', 'CORE_BEFORE_TASKS'] ? '' : 'is-hidden' }}" data-tab="before">
+                {% if migration.status is same as('CREATED') %}
+                    <progress class="progress is-small is-dark"></progress>
+                {% elseif migration.status is same as('FAILURE') and migration.finishedBeforeTasks|length < migration.beforeTasks|length %}
+                    <progress class="progress is-small is-danger" value="{{ migration.finishedBeforeTasks|length }}" max="{{ migration.beforeTasks|length }}"></progress>
+                {% elseif migration.status is same as('CANCELED') %}
+                    <progress class="progress is-small is-danger" value="{{ migration.finishedBeforeTasks|length }}" max="{{ migration.beforeTasks|length }}"></progress>
+                {% else %}
+                    <progress class="progress is-small is-success" value="{{ migration.finishedBeforeTasks|length }}" max="{{ migration.beforeTasks|length }}"></progress>
+                {% endif %}
+
+                {{ _self.tasks_list(migration.beforeTasks) }}
+            </div>
+
+            <div class="{{ migration.status in ['BEFORE_TASKS', 'CORE_BEFORE_TASKS', 'CORE_AFTER_TASKS', 'AFTER_TASKS'] ? 'is-hidden' : '' }}" data-tab="migrator">
+                {% if migration.status in ['CREATED', 'BEFORE_TASKS', 'CORE_BEFORE_TASKS'] %}
+                    <progress class="progress is-small is-dark"></progress>
+                {% elseif migration.status is same as('FAILURE') and migration.finishedMigrators|length < migration.migrators|length %}
+                    <progress class="progress is-small is-danger" value="{{ migration.finishedMigrators|length }}" max="{{ migration.migrators|length }}"></progress>
+                {% elseif migration.status is same as('CANCELED') %}
+                    <progress class="progress is-small is-danger" value="{{ migration.finishedMigrators|length }}" max="{{ migration.migrators|length }}"></progress>
+                {% else %}
+                    <progress class="progress is-small is-success" value="{{ migration.finishedMigrators|length }}" max="{{ migration.migrators|length }}"></progress>
+                {% endif %}
+
+                <div id="migrators_list" class="columns">
+                    {% for group in migrator_groups %}
+                        <div class="column is-full-mobile is-half-tablet is-one-third-desktop is-one-quarter-fullhd">
+                            {% for migrator in group %}
+                                {# @var migrator \Fregata\FregataBundle\Doctrine\Migrator\MigratorEntity #}
+                                <div class="card mb-4">
+                                    <header class="card-header">
+                                        <p class="card-header-title">
+                                            #{{ migrator.id }}&nbsp;
+                                            {{ migrator.serviceId|fregata_migrator_class|abbr_class }}
+                                        </p>
+                                        {% include '@Fregata/_includes/status_tag.html.twig' with {component: migrator} %}
+                                    </header>
+                                    <div class="card-content">
+                                        {% include '@Fregata/_includes/time_stats.html.twig' with {component: migrator} %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="{{ migration.status in ['CORE_AFTER_TASKS', 'AFTER_TASKS'] ? '' : 'is-hidden' }}" data-tab="after">
+                {% if migration.status in ['CREATED', 'BEFORE_TASKS', 'CORE_BEFORE_TASKS', 'MIGRATORS'] %}
+                    <progress class="progress is-small is-dark"></progress>
+                {% elseif migration.status is same as('FAILURE') and migration.finishedAfterTasks|length < migration.afterTasks|length %}
+                    <progress class="progress is-small is-danger" value="{{ migration.finishedAfterTasks|length }}" max="{{ migration.afterTasks|length }}"></progress>
+                {% elseif migration.status is same as('CANCELED') %}
+                    <progress class="progress is-small is-danger" value="{{ migration.finishedAfterTasks|length }}" max="{{ migration.afterTasks|length }}"></progress>
+                {% else %}
+                    <progress class="progress is-small is-success" value="{{ migration.finishedAfterTasks|length }}" max="{{ migration.afterTasks|length }}"></progress>
+                {% endif %}
+
+                {{ _self.tasks_list(migration.afterTasks) }}
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% macro migration_card(heading, content) %}
+    <div class="column is-half-mobile is-one-third-tablet is-2-fullhd">
+        <div class="box has-text-centered">
+            <p class="heading">{{ heading }}</p>
+            {{ content|raw }}
+        </div>
+    </div>
+{% endmacro %}
+
+{% macro tasks_list(tasksList) %}
+    <div class="columns is-multiline">
+        {% for task in tasksList %}
+            {# @var task \Fregata\FregataBundle\Doctrine\Task\TaskEntity #}
+            <div class="column is-full-mobile is-half-tablet is-one-third-desktop is-one-quarter-fullhd">
+                <div class="card">
+                    <header class="card-header">
+                        <p class="card-header-title">
+                            #{{ task.id }}&nbsp;
+                            {{ task.serviceId|fregata_task_class|abbr_class }}
+                        </p>
+                        {% include '@Fregata/_includes/status_tag.html.twig' with {component: task} %}
+                    </header>
+                    <div class="card-content">
+                        {% include '@Fregata/_includes/time_stats.html.twig' with {component: task} %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endmacro %}

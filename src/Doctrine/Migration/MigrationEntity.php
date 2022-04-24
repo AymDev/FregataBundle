@@ -5,6 +5,7 @@ namespace Fregata\FregataBundle\Doctrine\Migration;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Fregata\FregataBundle\Doctrine\FregataComponentInterface;
 use Fregata\FregataBundle\Doctrine\Migrator\MigratorEntity;
 use Fregata\FregataBundle\Doctrine\Task\TaskEntity;
 
@@ -13,7 +14,7 @@ use Fregata\FregataBundle\Doctrine\Task\TaskEntity;
  * @ORM\Entity(repositoryClass="Fregata\FregataBundle\Doctrine\Migration\MigrationRepository")
  * @ORM\Table(name="fregata_migration")
  */
-class MigrationEntity
+class MigrationEntity implements FregataComponentInterface
 {
     public const STATUS_CREATED           = 'CREATED';
     public const STATUS_BEFORE_TASKS      = 'BEFORE_TASKS';
@@ -151,9 +152,25 @@ class MigrationEntity
     /**
      * @return Collection<int, TaskEntity>
      */
+    public function getFinishedBeforeTasks()
+    {
+        return $this->getBeforeTasks()->filter(fn(TaskEntity $task) => $task->hasEnded());
+    }
+
+    /**
+     * @return Collection<int, TaskEntity>
+     */
     public function getAfterTasks()
     {
         return $this->tasks->filter(fn(TaskEntity $task) => $task->getType() === TaskEntity::TASK_AFTER);
+    }
+
+    /**
+     * @return Collection<int, TaskEntity>
+     */
+    public function getFinishedAfterTasks()
+    {
+        return $this->getAfterTasks()->filter(fn(TaskEntity $task) => $task->hasEnded());
     }
 
     public function addTask(TaskEntity $task): self
@@ -180,6 +197,14 @@ class MigrationEntity
     public function getMigrators()
     {
         return $this->migrators;
+    }
+
+    /**
+     * @return Collection<int, MigratorEntity>|MigratorEntity[]
+     */
+    public function getFinishedMigrators()
+    {
+        return $this->migrators->filter(fn(MigratorEntity $migrator) => $migrator->hasEnded());
     }
 
     public function addMigrator(MigratorEntity $migrator): self

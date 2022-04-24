@@ -1,0 +1,21 @@
+{% extends "@Fregata/base.html.twig" %}
+
+{% block page_title %}
+    Run history
+{% endblock %}
+
+{% block body %}
+    <div class="section">
+        <h1 class="title">
+            Run history: {{ migrations_list|length }}
+        </h1>
+
+        {% include '@Fregata/_includes/migration/table.html.twig' %}
+        {% include '@Fregata/_includes/pagination.html.twig' with {
+            total: migrations_list|length,
+            offset: pagination_offset,
+            current: pagination_current
+        } %}
+    </div>
+{% endblock %}
+

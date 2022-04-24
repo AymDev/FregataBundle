@@ -5,6 +5,7 @@ namespace Fregata\FregataBundle\Doctrine\Migration;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Tools\Pagination\Paginator;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -52,19 +53,32 @@ class MigrationRepository extends ServiceEntityRepository
             ->getOneOrNullResult();
     }
 
-    /**
-     * Get a run history page for a specific migration
-     */
-    public function getPageForService(string $serviceId, int $page): Paginator
+    private function createHistoryQuery(int $page): QueryBuilder
     {
-        $query = $this->createQueryBuilder('m')
-            ->where('m.serviceId = :serviceId')
-            ->setParameter('serviceId', $serviceId)
+        return $this->createQueryBuilder('m')
             ->orderBy('m.finishedAt', 'DESC')
             ->addOrderBy('m.startedAt', 'DESC')
             ->addOrderBy('m.id', 'DESC')
             ->setFirstResult(($page - 1) * self::PAGINATION_OFFSET)
             ->setMaxResults(self::PAGINATION_OFFSET);
+    }
+
+    /**
+     * Get a run history page
+     */
+    public function getPage(int $page): Paginator
+    {
+        return new Paginator($this->createHistoryQuery($page));
+    }
+
+    /**
+     * Get a run history page for a specific migration
+     */
+    public function getPageForService(string $serviceId, int $page): Paginator
+    {
+        $query = $this->createHistoryQuery($page)
+            ->where('m.serviceId = :serviceId')
+            ->setParameter('serviceId', $serviceId);
 
         return new Paginator($query);
     }

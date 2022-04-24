@@ -1,0 +1,65 @@
+{# @var component \Fregata\FregataBundle\Doctrine\FregataComponentInterface #}
+<div class="tags has-addons are-medium {{ center ?? false ? 'is-centered' : '' }}">
+    {#
+        common statuses
+    #}
+    {% if component.status is same as('CREATED') %}
+        <span class="tag">
+            <i class="fa-solid fa-circle-dot fa-fade"></i>
+        </span>
+        <span class="tag is-dark">Created</span>
+    {% elseif component.status is same as('FINISHED') %}
+        <span class="tag is-success is-light">
+            <i class="fa-solid fa-circle-check"></i>
+        </span>
+        <span class="tag is-success">Finished</span>
+    {% elseif component.status is same as('FAILURE') %}
+        <span class="tag is-danger is-light">
+            <i class="fa-solid fa-circle-xmark"></i>
+        </span>
+        <span class="tag is-danger">Failure</span>
+    {% elseif component.status is same as('CANCELED') %}
+        <span class="tag is-warning is-light">
+            <i class="fa-solid fa-ban"></i>
+        </span>
+        <span class="tag is-warning">Canceled</span>
+
+        {#
+            migration statuses
+        #}
+    {% elseif component.status is same as('BEFORE_TASKS') %}
+        <span class="tag is-info is-light">
+            <i class="fa-solid fa-gear fa-spin"></i>
+        </span>
+        <span class="tag is-info">Before tasks</span>
+    {% elseif component.status is same as('CORE_BEFORE_TASKS') %}
+        <span class="tag is-dark">
+            <i class="fa-solid fa-gear fa-spin"></i>
+        </span>
+        <span class="tag is-info">Core before tasks</span>
+    {% elseif component.status is same as('MIGRATORS') %}
+        <span class="tag is-primary is-light">
+            <i class="fa-solid fa-truck-fast fa-fade"></i>
+        </span>
+        <span class="tag is-primary">Migrators</span>
+    {% elseif component.status is same as('CORE_AFTER_TASKS') %}
+        <span class="tag is-dark">
+            <i class="fa-solid fa-gear fa-spin"></i>
+        </span>
+        <span class="tag is-info">Core after tasks</span>
+    {% elseif component.status is same as('AFTER_TASKS') %}
+        <span class="tag is-info is-light">
+            <i class="fa-solid fa-gear fa-spin"></i>
+        </span>
+        <span class="tag is-info">After tasks</span>
+
+        {#
+            task/migrator statuses
+        #}
+    {% elseif component.status is same as('RUNNING') %}
+        <span class="tag is-info is-light">
+            <i class="fa-solid fa-gear fa-spin"></i>
+        </span>
+        <span class="tag is-info">Running</span>
+    {% endif %}
+</div>

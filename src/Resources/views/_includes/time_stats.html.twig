@@ -1,0 +1,35 @@
+{# @var component \Fregata\FregataBundle\Doctrine\FregataComponentInterface #}
+{% if component.startedAt is not null %}
+    {{ component.startedAt|date('d/m/Y H:i:s') }}
+{% else %}
+    <i class="fa-solid fa-ellipsis"></i>
+{% endif %}
+<i class="fa-solid fa-slash fa-rotate-90"></i>
+{% if component.finishedAt is not null %}
+    {{ component.finishedAt|date('d/m/Y H:i:s') }}
+{% else %}
+    <i class="fa-solid fa-ellipsis"></i>
+{% endif %}
+
+{% if component.startedAt is not null and component.finishedAt is not null %}
+    {% set duration = component.finishedAt.diff(component.startedAt) %}
+    <div class="tags has-addons mt-1">
+        <span class="tag is-info is-light">
+            <i class="fa-solid fa-stopwatch"></i>
+        </span>
+        <span class="tag is-info">
+            {% if duration.days > 0 %}
+                {{ duration.days }} days
+                {{ duration.h }} hours
+            {% elseif duration.h > 0 %}
+                {{ duration.h }} hours
+                {{ duration.i }} minutes
+            {% elseif duration.i > 0 %}
+                {{ duration.i }} minutes
+                {{ duration.s }} seconds
+            {% elseif duration.s > 0 %}
+                {{ duration.s }} seconds
+            {% endif %}
+        </span>
+    </div>
+{% endif %}
