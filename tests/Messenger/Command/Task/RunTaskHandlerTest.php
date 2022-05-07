@@ -68,13 +68,13 @@ class RunTaskHandlerTest extends AbstractMessengerTestCase
      * Create a migration with a task and return a handler
      * @return array{RunTaskHandler, TaskEntity, MigrationEntity}
      */
-    private function createHandlerWithEntities(string $migrationStatus, string $taskType): array
+    private function createHandlerWithEntities(string $migrationStatus, string $taskType, string $taskStatus = TaskEntity::STATUS_CREATED): array
     {
         $migration = (new MigrationEntity())
             ->setStatus($migrationStatus)
             ->setServiceId('migration_service');
 
-        $task = $this->createTaskEntity($migration, $taskType);
+        $task = $this->createTaskEntity($migration, $taskType, $taskStatus);
 
         $handler = new RunTaskHandler(
             new ServiceLocator($this->servicesForLocator),
@@ -105,6 +105,25 @@ class RunTaskHandlerTest extends AbstractMessengerTestCase
 
         $message = new RunTask(0);
         $handler($message);
+    }
+
+    /**
+     * Task must not run multiple times
+     */
+    public function testRunTaskOnlyOnce(): void
+    {
+        $this->servicesForLocator = [
+            'task_service' => function () {
+                throw new \LogicException('Task must not run.');
+            },
+        ];
+
+        [$handler, $task] = $this->createHandlerWithEntities(MigrationEntity::STATUS_MIGRATORS, TaskEntity::TASK_BEFORE, TaskEntity::STATUS_RUNNING);
+
+        $message = new RunTask($task->getId());
+        $handler($message);
+
+        self::assertSame(TaskEntity::STATUS_RUNNING, $task->getStatus());
     }
 
     /**

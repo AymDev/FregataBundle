@@ -54,6 +54,14 @@ class RunTaskHandler implements MessageHandlerInterface
             ]);
         }
 
+        // Do not run task multiple times
+        if (TaskEntity::STATUS_CREATED !== $this->taskEntity->getStatus()) {
+            $this->logger->notice('Task already executed.', [
+                'task' => $this->taskEntity->getId(),
+            ]);
+            return;
+        }
+
         // Canceled/failed migration
         if (in_array($this->taskEntity->getMigration()->getStatus(), [MigrationEntity::STATUS_CANCELED, MigrationEntity::STATUS_FAILURE])) {
             $this->taskEntity->setStatus(TaskEntity::STATUS_CANCELED);

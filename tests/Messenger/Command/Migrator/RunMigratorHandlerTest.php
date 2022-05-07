@@ -53,9 +53,12 @@ class RunMigratorHandlerTest extends AbstractMessengerTestCase
         return $task;
     }
 
-    private function createMigratorEntity(MigrationEntity $migration): MigratorEntity
+    private function createMigratorEntity(MigrationEntity $migration, string $status = MigratorEntity::STATUS_CREATED): MigratorEntity
     {
-        $migrator = (new MigratorEntity())->setServiceId('migrator_service');
+        $migrator = (new MigratorEntity())
+            ->setServiceId('migrator_service')
+            ->setStatus($status)
+        ;
         $migration->addMigrator($migrator);
 
         $this->getEntityManager()->persist($migration);
@@ -69,13 +72,13 @@ class RunMigratorHandlerTest extends AbstractMessengerTestCase
      * Create a migration with a migrator and return a handler
      * @return array{RunMigratorHandler, MigratorEntity, MigrationEntity}
      */
-    private function createHandlerWithEntities(string $migrationStatus): array
+    private function createHandlerWithEntities(string $migrationStatus, string $migratorStatus = MigratorEntity::STATUS_CREATED): array
     {
         $migration = (new MigrationEntity())
             ->setStatus($migrationStatus)
             ->setServiceId('migration_service');
 
-        $migrator = $this->createMigratorEntity($migration);
+        $migrator = $this->createMigratorEntity($migration, $migratorStatus);
 
         $handler = new RunMigratorHandler(
             new ServiceLocator($this->servicesForLocator),
@@ -111,6 +114,25 @@ class RunMigratorHandlerTest extends AbstractMessengerTestCase
 
         $message = new RunMigrator($migrator);
         $handler($message);
+    }
+
+    /**
+     * Migrator must not run multiple times
+     */
+    public function testRunMigratorOnlyOnce(): void
+    {
+        $this->servicesForLocator = [
+            'migrator_service' => function () {
+                throw new \LogicException('Migrator must not run.');
+            },
+        ];
+
+        [$handler, $migrator] = $this->createHandlerWithEntities(MigrationEntity::STATUS_MIGRATORS, MigratorEntity::STATUS_RUNNING);
+
+        $message = new RunMigrator($migrator);
+        $handler($message);
+
+        self::assertSame(MigratorEntity::STATUS_RUNNING, $migrator->getStatus());
     }
 
     /**

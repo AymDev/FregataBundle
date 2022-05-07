@@ -53,6 +53,14 @@ class RunMigratorHandler implements MessageHandlerInterface
             ]);
         }
 
+        // Do not run migrator multiple times
+        if (MigratorEntity::STATUS_CREATED !== $this->migratorEntity->getStatus()) {
+            $this->logger->notice('Migrator already executed.', [
+                'migrator' => $this->migratorEntity->getId(),
+            ]);
+            return;
+        }
+
         // Canceled/failed migration
         if (in_array($this->migratorEntity->getMigration()->getStatus(), [MigrationEntity::STATUS_CANCELED, MigrationEntity::STATUS_FAILURE])) {
             $this->migratorEntity->setStatus(MigratorEntity::STATUS_CANCELED);
@@ -213,8 +221,11 @@ class RunMigratorHandler implements MessageHandlerInterface
     private function dispatchNextMessages(): void
     {
         // Dispatch messages for the dependent migrators
-        if ($this->migratorEntity->getNextMigrators()->count() > 0) {
-            foreach ($this->migratorEntity->getNextMigrators() as $nextMigrator) {
+        $nextMigrators = $this->migratorEntity->getNextMigrators()
+            ->filter(fn(MigratorEntity $migrator) => MigratorEntity::STATUS_CREATED === $migrator->getStatus());
+
+        if ($nextMigrators->count() > 0) {
+            foreach ($nextMigrators as $nextMigrator) {
                 $this->messageBus->dispatch(new RunMigrator($nextMigrator));
             }
             return;
