@@ -8,3 +8,15 @@ fregata:
                     - App\Fregata\TestMigration\AfterTask
             migrators:
                 - App\Fregata\TestMigration\Migrator
+
+        dependency:
+            tasks:
+                before:
+                    - App\Fregata\Dependency\Task\FirstTask
+                    - App\Fregata\Dependency\Task\SecondTask
+                    - App\Fregata\Dependency\Task\ThirdTask
+                after:
+                    - App\Fregata\Dependency\Task\FirstTask
+                    - App\Fregata\Dependency\Task\SecondTask
+                    - App\Fregata\Dependency\Task\ThirdTask
+            migrators_directory: '%kernel.project_dir%/src/Fregata/Dependency'

@@ -6,3 +6,7 @@ services:
         resource: '../src/'
         exclude:
             - '../src/TestKernel.php'
+
+    # Disable logger to avoid getting the stderr default logger of FrameworkBundle
+    Psr\Log\NullLogger: ~
+    logger: '@Psr\Log\NullLogger'

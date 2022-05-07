@@ -15,7 +15,7 @@ class MigrationControllerTest extends AbstractFunctionalTestCase
         $crawler = $this->client->request('GET', '/fregata/migration');
 
         self::assertResponseIsSuccessful();
-        self::assertCount(1, $crawler->filter('table > tbody > tr'));
+        self::assertCount(2, $crawler->filter('table > tbody > tr'));
         self::assertSelectorTextSame('table > tbody > tr > td', 'test_migration');
     }
 
