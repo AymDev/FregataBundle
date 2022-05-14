@@ -138,7 +138,10 @@ class FregataExtension extends FrameworkExtension
 
         // Map of migrator classes for service IDs
         $migratorIds = array_keys($container->findTaggedServiceIds(self::TAG_MIGRATOR));
-        $migratorClasses = array_map(fn(string $serviceId) => $container->getDefinition($serviceId)->getClass(), $migratorIds);
+        $migratorClasses = array_map(
+            fn(string $serviceId) => $container->getDefinition($serviceId)->getClass(),
+            $migratorIds
+        );
         $migratorMap = array_combine($migratorIds, $migratorClasses);
 
         $container

@@ -100,7 +100,7 @@ abstract class AbstractMessengerTestCase extends KernelTestCase
     protected function getMessageBus(): MessageBusInterface
     {
         if (null === $this->messageBus) {
-            $sendersLocator = new class($this->getMessengerTransport()) implements SendersLocatorInterface {
+            $sendersLocator = new class ($this->getMessengerTransport()) implements SendersLocatorInterface {
                 private InMemoryTransport $transport;
 
                 public function __construct(InMemoryTransport $transport)

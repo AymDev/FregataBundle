@@ -4,3 +4,4 @@
 composer.lock
 /_implementation/
 /tests/Fixtures/var
+.phpcs-cache

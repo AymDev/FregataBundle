@@ -53,8 +53,10 @@ class RunMigratorHandlerTest extends AbstractMessengerTestCase
         return $task;
     }
 
-    private function createMigratorEntity(MigrationEntity $migration, string $status = MigratorEntity::STATUS_CREATED): MigratorEntity
-    {
+    private function createMigratorEntity(
+        MigrationEntity $migration,
+        string $status = MigratorEntity::STATUS_CREATED
+    ): MigratorEntity {
         $migrator = (new MigratorEntity())
             ->setServiceId('migrator_service')
             ->setStatus($status)
@@ -72,8 +74,10 @@ class RunMigratorHandlerTest extends AbstractMessengerTestCase
      * Create a migration with a migrator and return a handler
      * @return array{RunMigratorHandler, MigratorEntity, MigrationEntity}
      */
-    private function createHandlerWithEntities(string $migrationStatus, string $migratorStatus = MigratorEntity::STATUS_CREATED): array
-    {
+    private function createHandlerWithEntities(
+        string $migrationStatus,
+        string $migratorStatus = MigratorEntity::STATUS_CREATED
+    ): array {
         $migration = (new MigrationEntity())
             ->setStatus($migrationStatus)
             ->setServiceId('migration_service');
@@ -127,7 +131,10 @@ class RunMigratorHandlerTest extends AbstractMessengerTestCase
             },
         ];
 
-        [$handler, $migrator] = $this->createHandlerWithEntities(MigrationEntity::STATUS_MIGRATORS, MigratorEntity::STATUS_RUNNING);
+        [$handler, $migrator] = $this->createHandlerWithEntities(
+            MigrationEntity::STATUS_MIGRATORS,
+            MigratorEntity::STATUS_RUNNING
+        );
 
         $message = new RunMigrator($migrator);
         $handler($message);
@@ -201,7 +208,9 @@ class RunMigratorHandlerTest extends AbstractMessengerTestCase
         $handler($message);
 
         self::assertSame(MigrationEntity::STATUS_BEFORE_TASKS, $migration->getStatus());
-        self::assertTrue($this->getLogger()->hasNoticeThatMatches('~Migrator \d+ in \w+ status is not ready as the migration is in \w+ state~'));
+        self::assertTrue($this->getLogger()->hasNoticeThatMatches(
+            '~Migrator \d+ in \w+ status is not ready as the migration is in \w+ state~'
+        ));
     }
 
     /**
@@ -218,7 +227,9 @@ class RunMigratorHandlerTest extends AbstractMessengerTestCase
         $handler($message);
 
         self::assertSame(MigrationEntity::STATUS_MIGRATORS, $migration->getStatus());
-        self::assertTrue($this->getLogger()->hasNoticeThatMatches('~Migrator \d+ in \w+ status is not ready as the migration is in \w+ state~'));
+        self::assertTrue($this->getLogger()->hasNoticeThatMatches(
+            '~Migrator \d+ in \w+ status is not ready as the migration is in \w+ state~'
+        ));
     }
 
     /**

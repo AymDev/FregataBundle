@@ -9,5 +9,4 @@ namespace Fregata\FregataBundle\Messenger;
  */
 interface FregataMessageInterface
 {
-
 }

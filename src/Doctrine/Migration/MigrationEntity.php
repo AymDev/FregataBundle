@@ -54,13 +54,21 @@ class MigrationEntity implements FregataComponentInterface
     private ?string $serviceId = null;
 
     /**
-     * @ORM\OneToMany(targetEntity="Fregata\FregataBundle\Doctrine\Task\TaskEntity", mappedBy="migration", orphanRemoval=true)
+     * @ORM\OneToMany(
+     *     targetEntity="Fregata\FregataBundle\Doctrine\Task\TaskEntity",
+     *     mappedBy="migration",
+     *     orphanRemoval=true
+     * )
      * @var Collection<int, TaskEntity>
      */
     private Collection $tasks;
 
     /**
-     * @ORM\OneToMany(targetEntity="Fregata\FregataBundle\Doctrine\Migrator\MigratorEntity", mappedBy="migration", orphanRemoval=true)
+     * @ORM\OneToMany(
+     *     targetEntity="Fregata\FregataBundle\Doctrine\Migrator\MigratorEntity",
+     *     mappedBy="migration",
+     *     orphanRemoval=true
+     * )
      * @var Collection<int, MigratorEntity>
      */
     private Collection $migrators;

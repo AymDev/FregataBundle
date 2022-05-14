@@ -22,8 +22,11 @@ class RunController extends AbstractController
     /**
      * Execute a new migration
      */
-    public function startNewRunAction(Request $request, MigrationRegistry $migrationRegistry, MessageBusInterface $bus): Response
-    {
+    public function startNewRunAction(
+        Request $request,
+        MigrationRegistry $migrationRegistry,
+        MessageBusInterface $bus
+    ): Response {
         $startMigrationForm = $this->createForm(StartMigrationForm::class, null, [
             'migrations' => $migrationRegistry->getAll(),
         ]);
@@ -62,8 +65,11 @@ class RunController extends AbstractController
     /**
      * Display a specific migration run details
      */
-    public function runDetailsAction(int $id, MigrationRepository $migrationRepository, MigratorSorter $migratorSorter): Response
-    {
+    public function runDetailsAction(
+        int $id,
+        MigrationRepository $migrationRepository,
+        MigratorSorter $migratorSorter
+    ): Response {
         $migration = $migrationRepository->find($id);
         if (null === $migration) {
             throw $this->createNotFoundException();
@@ -78,8 +84,12 @@ class RunController extends AbstractController
     /**
      * Cancel a running migration
      */
-    public function cancelRunAction(int $id, string $token, MigrationRepository $migrationRepository, EntityManagerInterface $entityManager): Response
-    {
+    public function cancelRunAction(
+        int $id,
+        string $token,
+        MigrationRepository $migrationRepository,
+        EntityManagerInterface $entityManager
+    ): Response {
         if (!$this->isCsrfTokenValid(sprintf('fregata_run_cancel_%s', $id), $token)) {
             $this->addFlash('danger', 'Invalid security token.');
         }

@@ -68,8 +68,11 @@ class RunTaskHandlerTest extends AbstractMessengerTestCase
      * Create a migration with a task and return a handler
      * @return array{RunTaskHandler, TaskEntity, MigrationEntity}
      */
-    private function createHandlerWithEntities(string $migrationStatus, string $taskType, string $taskStatus = TaskEntity::STATUS_CREATED): array
-    {
+    private function createHandlerWithEntities(
+        string $migrationStatus,
+        string $taskType,
+        string $taskStatus = TaskEntity::STATUS_CREATED
+    ): array {
         $migration = (new MigrationEntity())
             ->setStatus($migrationStatus)
             ->setServiceId('migration_service');
@@ -118,7 +121,11 @@ class RunTaskHandlerTest extends AbstractMessengerTestCase
             },
         ];
 
-        [$handler, $task] = $this->createHandlerWithEntities(MigrationEntity::STATUS_MIGRATORS, TaskEntity::TASK_BEFORE, TaskEntity::STATUS_RUNNING);
+        [$handler, $task] = $this->createHandlerWithEntities(
+            MigrationEntity::STATUS_MIGRATORS,
+            TaskEntity::TASK_BEFORE,
+            TaskEntity::STATUS_RUNNING
+        );
 
         $message = new RunTask($task->getId());
         $handler($message);
@@ -219,7 +226,9 @@ class RunTaskHandlerTest extends AbstractMessengerTestCase
         $handler($message);
 
         self::assertSame(MigrationEntity::STATUS_BEFORE_TASKS, $migration->getStatus());
-        self::assertTrue($this->getLogger()->hasNoticeThatMatches('~Task \d+ in \w+ status is not ready as the migration is in \w+ state~'));
+        self::assertTrue($this->getLogger()->hasNoticeThatMatches(
+            '~Task \d+ in \w+ status is not ready as the migration is in \w+ state~'
+        ));
     }
 
     /**
@@ -244,7 +253,9 @@ class RunTaskHandlerTest extends AbstractMessengerTestCase
         $handler($message);
 
         self::assertSame(MigrationEntity::STATUS_CORE_AFTER_TASKS, $migration->getStatus());
-        self::assertTrue($this->getLogger()->hasNoticeThatMatches('~Task \d+ in \w+ status is not ready as the migration is in \w+ state~'));
+        self::assertTrue($this->getLogger()->hasNoticeThatMatches(
+            '~Task \d+ in \w+ status is not ready as the migration is in \w+ state~'
+        ));
     }
 
     /**
@@ -419,8 +430,18 @@ class RunTaskHandlerTest extends AbstractMessengerTestCase
     public function provideNextTaskStepScenarios(): array
     {
         return [
-            [TaskEntity::TASK_BEFORE, TaskInterface::class, ForeignKeyBeforeTask::class, MigrationEntity::STATUS_BEFORE_TASKS],
-            [TaskEntity::TASK_AFTER, ForeignKeyAfterTask::class, TaskInterface::class, MigrationEntity::STATUS_CORE_AFTER_TASKS],
+            [
+                TaskEntity::TASK_BEFORE,
+                TaskInterface::class,
+                ForeignKeyBeforeTask::class,
+                MigrationEntity::STATUS_BEFORE_TASKS
+            ],
+            [
+                TaskEntity::TASK_AFTER,
+                ForeignKeyAfterTask::class,
+                TaskInterface::class,
+                MigrationEntity::STATUS_CORE_AFTER_TASKS
+            ],
         ];
     }
 

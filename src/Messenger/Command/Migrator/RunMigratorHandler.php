@@ -62,7 +62,8 @@ class RunMigratorHandler implements MessageHandlerInterface
         }
 
         // Canceled/failed migration
-        if (in_array($this->migratorEntity->getMigration()->getStatus(), [MigrationEntity::STATUS_CANCELED, MigrationEntity::STATUS_FAILURE])) {
+        $cancelingStatuses = [MigrationEntity::STATUS_CANCELED, MigrationEntity::STATUS_FAILURE];
+        if (in_array($this->migratorEntity->getMigration()->getStatus(), $cancelingStatuses)) {
             $this->migratorEntity->setStatus(MigratorEntity::STATUS_CANCELED);
             $this->entityManager->flush();
             $this->logger->notice('Canceled migrator.', [
