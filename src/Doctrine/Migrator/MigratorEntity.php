@@ -49,7 +49,7 @@ class MigratorEntity implements FregataComponentInterface
     private ?string $serviceId = null;
 
     /**
-     * @ORM\ManyToOne(targetEntity="Fregata\FregataBundle\Doctrine\Migration\MigrationEntity", inversedBy="tasks")
+     * @ORM\ManyToOne(targetEntity="Fregata\FregataBundle\Doctrine\Migration\MigrationEntity", inversedBy="migrators")
      * @ORM\JoinColumn(nullable=false)
      */
     private ?MigrationEntity $migration = null;
