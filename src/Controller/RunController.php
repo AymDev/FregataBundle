@@ -2,6 +2,8 @@
 
 namespace Fregata\FregataBundle\Controller;
 
+use Doctrine\ORM\EntityManagerInterface;
+use Fregata\FregataBundle\Doctrine\Migration\MigrationEntity;
 use Fregata\FregataBundle\Doctrine\Migration\MigrationRepository;
 use Fregata\FregataBundle\Form\StartMigration\StartMigrationForm;
 use Fregata\FregataBundle\Messenger\Command\Migration\StartMigration;
@@ -70,6 +72,33 @@ class RunController extends AbstractController
         return $this->render('@Fregata/run/details.html.twig', [
             'migration' => $migration,
             'migrator_groups' => $migratorSorter->sort($migration),
+        ]);
+    }
+
+    /**
+     * Cancel a running migration
+     */
+    public function cancelRunAction(int $id, string $token, MigrationRepository $migrationRepository, EntityManagerInterface $entityManager): Response
+    {
+        if (!$this->isCsrfTokenValid(sprintf('fregata_run_cancel_%s', $id), $token)) {
+            $this->addFlash('danger', 'Invalid security token.');
+        }
+
+        $migration = $migrationRepository->find($id);
+        if (null === $migration) {
+            throw $this->createNotFoundException();
+        }
+
+        if ($migration->hasEnded()) {
+            $this->addFlash('warning', 'Cannot cancel migration as it already ended.');
+        } else {
+            $migration->setStatus(MigrationEntity::STATUS_CANCELED);
+            $entityManager->flush();
+            $this->addFlash('success', 'Migration has been canceled.');
+        }
+
+        return $this->redirectToRoute('fregata_run_details', [
+            'id' => $migration->getId(),
         ]);
     }
 }

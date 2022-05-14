@@ -15,6 +15,13 @@
 {% block body %}
     <section class="hero is-primary is-light">
         <div class="hero-body">
+            {% if not migration.ended %}
+                <a href="{{ path('fregata_run_cancel', {id: migration.id, token: csrf_token('fregata_run_cancel_' ~ migration.id)}) }}" class="button is-danger is-pulled-right">
+                    <span class="icon"><i class="fa-regular fa-circle-stop"></i></span>
+                    <span>Cancel migration</span>
+                </a>
+            {% endif %}
+
             <p class="title">
                 Migration {{ migration.serviceId }}
             </p>
@@ -25,6 +32,8 @@
     </section>
 
     <div class="section">
+        {% include '@Fregata/_includes/flash_messages.html.twig' %}
+
         <div class="columns is-multiline is-vcentered is-mobile">
             {{ _self.migration_card('Migration', '<a href="' ~ path('fregata_migration_details', {service_id: migration.serviceId}) ~ '">' ~ migration.serviceId ~ '</a>') }}
             {{ _self.migration_card('Status', include('@Fregata/_includes/status_tag.html.twig', {

@@ -15,4 +15,9 @@
         <default key="_controller">fregata.controller.run::runDetailsAction</default>
         <requirement key="id">\d+</requirement>
     </route>
+
+    <route id="fregata_run_cancel" path="/run/{id}/cancel/{token}" methods="GET">
+        <default key="_controller">fregata.controller.run::cancelRunAction</default>
+        <requirement key="id">\d+</requirement>
+    </route>
 </routes>

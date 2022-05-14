@@ -77,4 +77,63 @@ class RunControllerTest extends AbstractFunctionalTestCase
         $this->client->request('GET', sprintf('/fregata/run/%d', $migration->getId()));
         self::assertResponseIsSuccessful();
     }
+
+    public function testCancelRun(): void
+    {
+        $migration = $this->createMigrationEntity(MigrationEntity::STATUS_MIGRATORS);
+        $runUri = sprintf('/fregata/run/%d', $migration->getId());
+
+        $this->client->request('GET', $runUri);
+        self::assertResponseIsSuccessful();
+
+        $this->client->clickLink('Cancel migration');
+        self::assertResponseRedirects($runUri);
+
+        $this->client->followRedirect();
+        self::assertSelectorTextContains('.notification.is-success', 'Migration has been canceled.');
+    }
+
+    public function testCannotCancelRunWithInvalidToken(): void
+    {
+        $migration = $this->createMigrationEntity(MigrationEntity::STATUS_MIGRATORS);
+
+        $this->client->request('GET', sprintf('/fregata/run/%d/cancel/invalid', $migration->getId()));
+        self::assertResponseRedirects(sprintf('/fregata/run/%d', $migration->getId()));
+
+        $this->client->followRedirect();
+        self::assertSelectorTextContains('.notification.is-danger', 'Invalid security token.');
+    }
+
+    public function testCannotCancelRunForUnknownMigration(): void
+    {
+        $migration = $this->createMigrationEntity(MigrationEntity::STATUS_MIGRATORS);
+        $this->client->request('GET', sprintf('/fregata/run/%d', $migration->getId()));
+        self::assertResponseIsSuccessful();
+
+        // Delete the migration
+        $this->entityManager->remove($migration);
+        $this->entityManager->flush();
+
+        $this->client->clickLink('Cancel migration');
+        self::assertResponseStatusCodeSame(404);
+    }
+
+    public function testCannotCancelRunForEndedMigration(): void
+    {
+        $migration = $this->createMigrationEntity(MigrationEntity::STATUS_MIGRATORS);
+        $runUri = sprintf('/fregata/run/%d', $migration->getId());
+
+        $this->client->request('GET', $runUri);
+        self::assertResponseIsSuccessful();
+
+        // End the migration
+        $migration->setStatus(MigrationEntity::STATUS_FINISHED);
+        $this->entityManager->flush();
+
+        $this->client->clickLink('Cancel migration');
+        self::assertResponseRedirects($runUri);
+
+        $this->client->followRedirect();
+        self::assertSelectorTextContains('.notification.is-warning', 'Cannot cancel migration as it already ended.');
+    }
 }
