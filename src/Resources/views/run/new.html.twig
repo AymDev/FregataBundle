@@ -1,0 +1,31 @@
+{% extends "@Fregata/base.html.twig" %}
+{% form_theme start_migration_form '@Fregata/_includes/_bulma_form_theme.html.twig' %}
+
+{% block page_title %}
+    New run
+{% endblock %}
+
+{% block body %}
+    <div class="section">
+        <h1 class="title">
+            New run
+        </h1>
+
+        {% include '@Fregata/_includes/flash_messages.html.twig' %}
+
+        <div class="columns is-centered">
+            <div class="column is-half-desktop">
+                {{ form_start(start_migration_form) }}
+                    {{ form_row(start_migration_form.migration, {
+                        label: 'Migration'
+                    }) }}
+
+                    <button type="submit" name="start_new_migration" class="button is-success is-fullwidth">
+                        <span class="icon"><i class="fa-solid fa-play"></i></span>
+                        <span>Run</span>
+                    </button>
+                {{ form_end(start_migration_form) }}
+            </div>
+        </div>
+    </div>
+{% endblock %}

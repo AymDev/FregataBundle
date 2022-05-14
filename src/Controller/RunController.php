@@ -3,9 +3,13 @@
 namespace Fregata\FregataBundle\Controller;
 
 use Fregata\FregataBundle\Doctrine\Migration\MigrationRepository;
+use Fregata\FregataBundle\Form\StartMigration\StartMigrationForm;
+use Fregata\FregataBundle\Messenger\Command\Migration\StartMigration;
+use Fregata\Migration\MigrationRegistry;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Messenger\MessageBusInterface;
 
 /**
  * Routes for the migration runs
@@ -16,9 +20,26 @@ class RunController extends AbstractController
     /**
      * Execute a new migration
      */
-    public function startNewRunAction(): Response
+    public function startNewRunAction(Request $request, MigrationRegistry $migrationRegistry, MessageBusInterface $bus): Response
     {
-        dd('TODO');
+        $startMigrationForm = $this->createForm(StartMigrationForm::class, null, [
+            'migrations' => $migrationRegistry->getAll(),
+        ]);
+        $startMigrationForm->handleRequest($request);
+
+        if ($startMigrationForm->isSubmitted() && $startMigrationForm->isValid()) {
+            $migrationName = $startMigrationForm->get('migration')->getData();
+            $bus->dispatch(new StartMigration($migrationName));
+
+            $this->addFlash(
+                'success',
+                sprintf('A new run for the "%s" migration should be starting soon.', $migrationName)
+            );
+        }
+
+        return $this->render('@Fregata/run/new.html.twig', [
+            'start_migration_form' => $startMigrationForm->createView(),
+        ]);
     }
 
     /**

@@ -8,6 +8,22 @@ use Fregata\FregataBundle\Doctrine\Migration\MigrationRepository;
 class RunControllerTest extends AbstractFunctionalTestCase
 {
     /**
+     * A new migration run can be started from the web interface
+     */
+    public function testStartNewRun(): void
+    {
+        $this->client->request('GET', '/fregata/run/new');
+        self::assertResponseIsSuccessful();
+
+        $this->client->submitForm('start_new_migration', [
+            'start_migration_form[migration]' => 'test_migration',
+        ]);
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('.notification.is-success', 'test_migration');
+    }
+
+    /**
      * The run history lists all runs
      */
     public function testRunHistory(): void

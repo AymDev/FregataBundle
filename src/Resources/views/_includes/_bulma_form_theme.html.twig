@@ -1,0 +1,173 @@
+{#
+Source: https://gist.github.com/AymDev/b6540f6eb17671788255f165cdc33dc8
+#}
+{% use 'form_div_layout.html.twig' %}
+
+
+
+{# Input #}
+{%- block form_widget_simple -%}
+    {%- set type = type|default('text') -%}
+    {%- if type == 'range' or type == 'color' -%}
+        {# Attribute "required" is not supported #}
+        {%- set required = false -%}
+    {%- endif -%}
+    {% if type != 'hidden' %}
+        {%- set attr = attr|merge({class: (attr.class|default('') ~ ' input')|trim}) -%}
+    {% endif %}
+    <input type="{{ type }}" {{ block('widget_attributes') }} {% if value is not empty %}value="{{ value }}" {% endif %}/>
+{%- endblock form_widget_simple -%}
+
+
+
+{# Money widget #}
+{% block money_widget -%}
+    {%- set prepend = not (money_pattern starts with '{{') -%}
+    {%- set append = not (money_pattern ends with '}}') -%}
+    {%- if prepend or append -%}
+        <div class="control {{ prepend ? 'has-icons-left' : '' }} {{ append ? 'has-icons-right' : '' }}">
+            {{- block('form_widget_simple') -}}
+            {% if prepend %}
+                <span class="icon is-left">
+                    {{ money_pattern|form_encode_currency }}
+                </span>
+            {% endif %}
+            {% if append %}
+                <span class="icon is-right">
+                    {{ money_pattern|form_encode_currency }}
+                </span>
+            {% endif %}
+        </div>
+    {%- else -%}
+    {%- endif -%}
+{%- endblock money_widget %}
+
+
+
+{# Textarea #}
+{%- block textarea_widget -%}
+    {%- set attr = attr|merge({class: (attr.class|default('') ~ ' textarea')|trim}) -%}
+    {{ parent() }}
+{%- endblock textarea_widget -%}
+
+
+
+{# Select #}
+{%- block choice_widget_collapsed -%}
+    <div class="select is-fullwidth {{ multiple ? "is-multiple" : "" }}">
+        {{ parent() }}
+    </div>
+{%- endblock choice_widget_collapsed -%}
+
+
+
+{# Expanded select: radio/checkbox #}
+{%- block choice_widget_expanded -%}
+    <div {{ block('widget_container_attributes') }}>
+        {%- for child in form %}
+            <div class="field">
+                <div class="control">
+                    {{- form_widget(child) -}}
+                    {{- form_label(child, null, {translation_domain: choice_translation_domain}) -}}
+                </div>
+            </div>
+        {% endfor -%}
+    </div>
+{%- endblock choice_widget_expanded -%}
+
+
+
+{# Checkbox #}
+{%- block checkbox_widget -%}
+    {% set attr = attr|merge({'class': (attr.class|default('') ~ ' switch')|trim}) %}
+    {{ parent() }}
+    <label for="{{ id }}" class="checkbox">
+        {{ label }}
+    </label>
+{%- endblock checkbox_widget -%}
+
+
+
+{# File #}
+{%- block file_widget -%}
+    {%- set attr = attr|merge({class: (attr.class|default('') ~ ' file has-name')|trim}) -%}
+    <div {{ block('widget_container_attributes') }}>
+        <label class="file-label">
+            {%- set attr = attr|merge({class: (attr.class|default('') ~ ' file-input')|trim}) -%}
+            <input type="file" {{ block('widget_attributes') }}>
+            <span class="file-cta">
+                <span class="file-icon"><i class="fas fa-upload"></i></span>
+                <span class="file-label">Fichier ...</span>
+            </span>
+            <span class="file-name">Aucun fichier</span>
+        </label>
+    </div>
+{%- endblock file_widget -%}
+
+
+
+{# Label #}
+{%- block form_label -%}
+    {% if block_prefixes[1] != 'checkbox' %}
+        {% set label_attr = label_attr|merge({'class': (label_attr.class|default('') ~ ' label')|trim}) %}
+        {{ parent() }}
+    {% endif %}
+{%- endblock form_label -%}
+
+
+
+{# Help #}
+{% block form_help -%}
+    {% if help is not empty %}
+        <div class="help has-addons">
+            <span class="icon has-text-info">
+                <i class="fas fa-question-circle"></i>
+            </span>
+            <span>
+                {{ help }}
+            </span>
+        </div>
+    {% endif %}
+{%- endblock form_help %}
+
+
+
+{# Row #}
+{%- block form_row -%}
+    {%- set widget_attr = {} -%}
+    {%- if help is not empty -%}
+        {%- set widget_attr = {attr: {'aria-describedby': id ~"_help"}} -%}
+    {%- endif -%}
+    <div {% with {attr: row_attr|default({})|merge({class: (attr.class|default('') ~ ' field')|trim})} %}{{ block('attributes') }}{% endwith %}>
+        {{- form_label(form) -}}
+        <div class="control">
+            {{- form_widget(form, widget_attr) -}}
+        </div>
+        {{- form_help(form) -}}
+        {{- form_errors(form) -}}
+    </div>
+{%- endblock form_row -%}
+
+
+
+{# Add input invalid class #}
+{%- block widget_attributes -%}
+    {%- if not valid %}
+        {% set attr = attr|merge({class: (attr.class|default('') ~ ' is-danger')|trim}) %}
+    {% endif -%}
+    {{ parent() }}
+{%- endblock widget_attributes -%}
+
+
+
+{# Errors #}
+{%- block form_errors -%}
+    {%- if errors|length > 0 -%}
+        {%- for error in errors -%}
+            <p class="help is-danger">
+                <span class="icon is-danger"><i class="fas fa-exclamation-circle"></i></span>
+                <span>{{ error.message }}</span>
+            </p>
+        {%- endfor -%}
+    {%- endif -%}
+{%- endblock form_errors -%}
