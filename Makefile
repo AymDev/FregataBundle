@@ -12,12 +12,12 @@ shell:
 
 implementation:
 	sudo rm -rf ./_implementation
-	docker exec -it fregata_bundle_app composer create-project symfony/skeleton:"4.4.*" ./_implementation --no-progress
-	docker exec -it fregata_bundle_app composer --working-dir=./_implementation config minimum-stability dev
+	docker exec -it fregata_bundle_app composer config --global --no-interaction allow-plugins.symfony/flex true
+	docker exec -it fregata_bundle_app composer config --global --no-interaction allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
+	docker exec -it fregata_bundle_app composer config --global --no-interaction allow-plugins.phpstan/extension-installer true
+	docker exec -it fregata_bundle_app composer create-project symfony/skeleton:"4.4.*" ./_implementation --no-progress --no-interaction
 	docker exec -it fregata_bundle_app composer --working-dir=./_implementation config repositories.fregata_bundle path ../
-	docker exec -it fregata_bundle_app composer --working-dir=./_implementation require --no-interaction twig
-	docker exec -it fregata_bundle_app composer --working-dir=./_implementation require --no-interaction aymdev/fregata-bundle:"*"
-	docker exec -it fregata_bundle_app composer --working-dir=./_implementation require --no-interaction debug maker messenger orm
+	docker exec -it fregata_bundle_app composer --working-dir=./_implementation require --no-interaction --with-all-dependencies aymdev/fregata-bundle:"dev-main" debug maker:"^1.35" messenger migrations twig
 	docker exec -it fregata_bundle_app sed -i -E 's|^DATABASE_URL=.*$$|DATABASE_URL="postgresql://root:root@postgres:5432/fregata_bundle_db"|' ./_implementation/.env
 	docker exec -it fregata_bundle_app sed -i -E 's|^# (MESSENGER_TRANSPORT_DSN=doctrine://default)$$|\1|' ./_implementation/.env
 	docker exec -it fregata_bundle_app sed -i -E 's|^(\s+)# (async.*)$$|\1\2|' ./_implementation/config/packages/messenger.yaml

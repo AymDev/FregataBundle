@@ -11,9 +11,9 @@ use Fregata\FregataBundle\Doctrine\Task\TaskEntity;
 
 /**
  * @internal
- * @ORM\Entity(repositoryClass="Fregata\FregataBundle\Doctrine\Migration\MigrationRepository")
- * @ORM\Table(name="fregata_migration")
  */
+#[ORM\Entity(repositoryClass: MigrationRepository::class)]
+#[ORM\Table(name: 'fregata_migration')]
 class MigrationEntity implements FregataComponentInterface
 {
     public const STATUS_CREATED           = 'CREATED';
@@ -26,51 +26,29 @@ class MigrationEntity implements FregataComponentInterface
     public const STATUS_FAILURE           = 'FAILURE';
     public const STATUS_CANCELED          = 'CANCELED';
 
-    /**
-     * @ORM\Id()
-     * @ORM\GeneratedValue()
-     * @ORM\Column(type="integer")
-     */
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: 'integer')]
     private ?int $id = null;
 
-    /**
-     * @ORM\Column(type="datetime", nullable=true)
-     */
+    #[ORM\Column(type: 'datetime', nullable: true)]
     private ?\DateTime $startedAt = null;
 
-    /**
-     * @ORM\Column(type="datetime", nullable=true)
-     */
+    #[ORM\Column(type: 'datetime', nullable: true)]
     private ?\DateTime $finishedAt = null;
 
-    /**
-     * @ORM\Column(type="string", length=50)
-     */
+    #[ORM\Column(type: 'string', length: 50)]
     private string $status = self::STATUS_CREATED;
 
-    /**
-     * @ORM\Column(type="text")
-     */
+    #[ORM\Column(type: 'text')]
     private ?string $serviceId = null;
 
-    /**
-     * @ORM\OneToMany(
-     *     targetEntity="Fregata\FregataBundle\Doctrine\Task\TaskEntity",
-     *     mappedBy="migration",
-     *     orphanRemoval=true
-     * )
-     * @var Collection<int, TaskEntity>
-     */
+    /** @var Collection<int, TaskEntity> */
+    #[ORM\OneToMany(mappedBy: 'migration', targetEntity: TaskEntity::class, orphanRemoval: true)]
     private Collection $tasks;
 
-    /**
-     * @ORM\OneToMany(
-     *     targetEntity="Fregata\FregataBundle\Doctrine\Migrator\MigratorEntity",
-     *     mappedBy="migration",
-     *     orphanRemoval=true
-     * )
-     * @var Collection<int, MigratorEntity>
-     */
+    /** @var Collection<int, MigratorEntity> */
+    #[ORM\OneToMany(mappedBy: 'migration', targetEntity: MigratorEntity::class, orphanRemoval: true)]
     private Collection $migrators;
 
     public function __construct()

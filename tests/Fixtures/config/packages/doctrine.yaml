@@ -8,7 +8,7 @@ doctrine:
         mappings:
             Fregata:
                 is_bundle: false
-                type: annotation
+                type: attribute
                 dir: '%kernel.project_dir%/../../src/Doctrine'
                 prefix: Fregata\FregataBundle\Doctrine
                 alias: Fregata

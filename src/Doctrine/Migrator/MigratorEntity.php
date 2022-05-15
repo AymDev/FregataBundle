@@ -10,9 +10,9 @@ use Fregata\FregataBundle\Doctrine\Migration\MigrationEntity;
 
 /**
  * @internal
- * @ORM\Entity(repositoryClass="Fregata\FregataBundle\Doctrine\Migrator\MigratorRepository")
- * @ORM\Table(name="fregata_migrator")
  */
+#[ORM\Entity(repositoryClass: MigratorRepository::class)]
+#[ORM\Table(name: 'fregata_migrator')]
 class MigratorEntity implements FregataComponentInterface
 {
     public const STATUS_CREATED  = 'CREATED';
@@ -21,49 +21,33 @@ class MigratorEntity implements FregataComponentInterface
     public const STATUS_FAILURE  = 'FAILURE';
     public const STATUS_CANCELED = 'CANCELED';
 
-    /**
-     * @ORM\Id()
-     * @ORM\GeneratedValue()
-     * @ORM\Column(type="integer")
-     */
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: 'integer')]
     private ?int $id = null;
 
-    /**
-     * @ORM\Column(type="datetime", nullable=true)
-     */
+    #[ORM\Column(type: 'datetime', nullable: true)]
     private ?\DateTime $startedAt = null;
 
-    /**
-     * @ORM\Column(type="datetime", nullable=true)
-     */
+    #[ORM\Column(type: 'datetime', nullable: true)]
     private ?\DateTime $finishedAt = null;
 
-    /**
-     * @ORM\Column(type="string", length=50)
-     */
+    #[ORM\Column(type: 'string', length: 50)]
     private string $status = self::STATUS_CREATED;
 
-    /**
-     * @ORM\Column(type="text")
-     */
+    #[ORM\Column(type: 'text')]
     private ?string $serviceId = null;
 
-    /**
-     * @ORM\ManyToOne(targetEntity="Fregata\FregataBundle\Doctrine\Migration\MigrationEntity", inversedBy="migrators")
-     * @ORM\JoinColumn(nullable=false)
-     */
+    #[ORM\ManyToOne(targetEntity: MigrationEntity::class, inversedBy: 'migrators')]
+    #[ORM\JoinColumn(nullable: false)]
     private ?MigrationEntity $migration = null;
 
-    /**
-     * @ORM\ManyToMany(targetEntity="Fregata\FregataBundle\Doctrine\Migrator\MigratorEntity", inversedBy="previousMigrators")
-     * @var Collection<int, MigratorEntity>
-     */
+    /** @var Collection<int, MigratorEntity> */
+    #[ORM\ManyToMany(targetEntity: self::class, mappedBy: 'previousMigrators')]
     private Collection $nextMigrators;
 
-    /**
-     * @ORM\ManyToMany(targetEntity="Fregata\FregataBundle\Doctrine\Migrator\MigratorEntity", mappedBy="nextMigrators")
-     * @var Collection<int, MigratorEntity>
-     */
+    /** @var Collection<int, MigratorEntity> */
+    #[ORM\ManyToMany(targetEntity: self::class, inversedBy: 'nextMigrators')]
     private Collection $previousMigrators;
 
     public function __construct()

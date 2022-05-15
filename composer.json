@@ -17,8 +17,8 @@
         "symfony/dependency-injection": "^4.4||^5.0",
         "symfony/config": "^4.4||^5.0",
         "symfony/framework-bundle": "^4.4||^5.0",
-        "doctrine/doctrine-bundle": "^2.0",
-        "doctrine/orm": "^2.6",
+        "doctrine/doctrine-bundle": "^2.4",
+        "doctrine/orm": "^2.9",
         "symfony/messenger": "^4.4||^5.0",
         "symfony/asset": "^4.4||^5.0",
         "symfony/form": "^4.4||^5.0",
@@ -53,7 +53,8 @@
     "config": {
         "allow-plugins": {
             "dealerdirect/phpcodesniffer-composer-installer": true,
-            "phpstan/extension-installer": true
+            "phpstan/extension-installer": true,
+            "symfony/flex": true
         }
     }
 }

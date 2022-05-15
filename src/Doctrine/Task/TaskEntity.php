@@ -8,9 +8,9 @@ use Fregata\FregataBundle\Doctrine\Migration\MigrationEntity;
 
 /**
  * @internal
- * @ORM\Entity(repositoryClass="Fregata\FregataBundle\Doctrine\Task\TaskRepository")
- * @ORM\Table(name="fregata_task")
  */
+#[ORM\Entity(repositoryClass: TaskRepository::class)]
+#[ORM\Table(name: 'fregata_task')]
 class TaskEntity implements FregataComponentInterface
 {
     public const TASK_BEFORE = 'BEFORE';
@@ -22,42 +22,28 @@ class TaskEntity implements FregataComponentInterface
     public const STATUS_FAILURE  = 'FAILURE';
     public const STATUS_CANCELED = 'CANCELED';
 
-    /**
-     * @ORM\Id()
-     * @ORM\GeneratedValue()
-     * @ORM\Column(type="integer")
-     */
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: 'integer')]
     private ?int $id = null;
 
-    /**
-     * @ORM\Column(type="datetime", nullable=true)
-     */
+    #[ORM\Column(type: 'datetime', nullable: true)]
     private ?\DateTime $startedAt = null;
 
-    /**
-     * @ORM\Column(type="datetime", nullable=true)
-     */
+    #[ORM\Column(type: 'datetime', nullable: true)]
     private ?\DateTime $finishedAt = null;
 
-    /**
-     * @ORM\Column(type="string", length=50)
-     */
+    #[ORM\Column(type: 'string', length: 50)]
     private ?string $type = null;
 
-    /**
-     * @ORM\Column(type="string", length=50)
-     */
+    #[ORM\Column(type: 'string', length: 50)]
     private string $status = self::STATUS_CREATED;
 
-    /**
-     * @ORM\Column(type="text")
-     */
+    #[ORM\Column(type: 'text')]
     private ?string $serviceId = null;
 
-    /**
-     * @ORM\ManyToOne(targetEntity="Fregata\FregataBundle\Doctrine\Migration\MigrationEntity", inversedBy="tasks")
-     * @ORM\JoinColumn(nullable=false)
-     */
+    #[ORM\ManyToOne(targetEntity: MigrationEntity::class, inversedBy: 'tasks')]
+    #[ORM\JoinColumn(nullable: false)]
     private ?MigrationEntity $migration = null;
 
     public function getId(): ?int

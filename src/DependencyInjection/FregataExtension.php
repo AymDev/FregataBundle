@@ -18,6 +18,7 @@ use Symfony\Component\DependencyInjection\Compiler\ServiceLocatorTagPass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
+use Twig\Extension\AbstractExtension;
 
 class FregataExtension extends FrameworkExtension
 {
@@ -40,7 +41,9 @@ class FregataExtension extends FrameworkExtension
         $this->registerControllers($container);
 
         // Register Twig services
-        $this->registerTwigServices($container);
+        if (class_exists(AbstractExtension::class)) {
+            $this->registerTwigServices($container);
+        }
     }
 
     private function registerDoctrineServices(ContainerBuilder $container): void

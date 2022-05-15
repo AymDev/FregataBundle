@@ -24,7 +24,7 @@ class FregataBundle extends Bundle
         $container->addCompilerPass(new CommandsCompilerPass());
 
         // Register Doctrine entities
-        $container->addCompilerPass(DoctrineOrmMappingsPass::createAnnotationMappingDriver(
+        $container->addCompilerPass(DoctrineOrmMappingsPass::createAttributeMappingDriver(
             [__NAMESPACE__ . '\Doctrine'],
             [__DIR__ . '/Doctrine']
         ));
