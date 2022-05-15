@@ -24,12 +24,10 @@ abstract class AbstractFunctionalTestCase extends WebTestCase
         parent::setUp();
 
         $this->client = static::createClient();
-        /** @var ContainerInterface $container */
-        $container = $this->client->getContainer();
 
-        /** @var EntityManagerInterface $manager */
-        $manager = $container->get('doctrine')->getManager();
-        $this->entityManager = $manager;
+        /** @var EntityManagerInterface $entityManager */
+        $entityManager = self::getContainer()->get(EntityManagerInterface::class);
+        $this->entityManager = $entityManager;
     }
 
     /**

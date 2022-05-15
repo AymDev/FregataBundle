@@ -19,7 +19,7 @@ class CommandsCompilerPass implements CompilerPassInterface
         MigrationExecuteCommand::class,
     ];
 
-    public function process(ContainerBuilder $container)
+    public function process(ContainerBuilder $container): void
     {
         // Helpers
         $commandHelperDefinition = new Definition(CommandHelper::class);

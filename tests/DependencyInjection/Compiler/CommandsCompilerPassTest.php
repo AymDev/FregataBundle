@@ -15,7 +15,7 @@ class CommandsCompilerPassTest extends TestCase
     /**
      * Commands must be registered and tagged
      */
-    public function testCommandsRegistration()
+    public function testCommandsRegistration(): void
     {
         $commandsPass = new CommandsCompilerPass();
         $container = new ContainerBuilder();

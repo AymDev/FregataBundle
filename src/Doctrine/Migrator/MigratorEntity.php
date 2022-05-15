@@ -116,11 +116,15 @@ class MigratorEntity implements FregataComponentInterface
 
     public function hasEnded(): bool
     {
-        return in_array($this->getStatus(), [
-            self::STATUS_FINISHED,
-            self::STATUS_FAILURE,
-            self::STATUS_CANCELED,
-        ]);
+        return in_array(
+            $this->getStatus(),
+            [
+                self::STATUS_FINISHED,
+                self::STATUS_FAILURE,
+                self::STATUS_CANCELED,
+            ],
+            true
+        );
     }
 
     public function getServiceId(): ?string

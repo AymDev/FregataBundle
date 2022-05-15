@@ -15,6 +15,9 @@ class RunMigrator implements FregataMessageInterface
 
     public function __construct(MigratorEntity $migratorEntity)
     {
+        if (null === $migratorEntity->getId()) {
+            throw new \LogicException('Migrator has no ID.');
+        }
         $this->migratorId = $migratorEntity->getId();
     }
 

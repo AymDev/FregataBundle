@@ -10,7 +10,7 @@ class RunTaskTest extends AbstractMessengerTestCase
     /**
      * Entity ID is kept in the message
      */
-    public function testMessageHasEntityId()
+    public function testMessageHasEntityId(): void
     {
         $message = new RunTask(42);
         self::assertSame(42, $message->getTaskId());

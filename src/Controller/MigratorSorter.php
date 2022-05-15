@@ -42,7 +42,10 @@ final class MigratorSorter
         return $groups;
     }
 
-    private function registerMigrator(&$groups, int $level, MigratorEntity $migrator): void
+    /**
+     * @param MigratorEntity[][] $groups
+     */
+    private function registerMigrator(array &$groups, int $level, MigratorEntity $migrator): void
     {
         $groups[$level][] = $migrator;
 

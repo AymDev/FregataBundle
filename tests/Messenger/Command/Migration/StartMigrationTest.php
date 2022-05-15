@@ -8,16 +8,7 @@ use PHPUnit\Framework\TestCase;
 
 class StartMigrationTest extends TestCase
 {
-    /**
-     * Every message must implement the "marker" interface in order to be easily routed to a transport
-     */
-    public function testMessageImplementsMarkerInterface()
-    {
-        $message = new StartMigration('some_migration');
-        self::assertInstanceOf(FregataMessageInterface::class, $message);
-    }
-
-    public function testProperties()
+    public function testProperties(): void
     {
         $migrationId = 'test_migration';
         $message = new StartMigration($migrationId);

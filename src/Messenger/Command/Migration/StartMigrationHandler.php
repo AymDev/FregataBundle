@@ -51,7 +51,7 @@ class StartMigrationHandler implements MessageHandlerInterface
         $this->messageBus = $messageBus;
     }
 
-    public function __invoke(StartMigration $startMigration)
+    public function __invoke(StartMigration $startMigration): void
     {
         // Get migration service
         $migrationId = $startMigration->getMigrationId();
@@ -152,6 +152,7 @@ class StartMigrationHandler implements MessageHandlerInterface
         // Manage dependencies directly as migrators are already sorted
         if ($migrator instanceof DependentMigratorInterface) {
             foreach ($migrator->getDependencies() as $parentMigratorClass) {
+                /** @var MigratorEntity $parentMigratorEntity */
                 $parentMigratorEntity = $this->serviceMap[$parentMigratorClass];
                 $parentMigratorEntity->addNextMigrator($migratorEntity);
             }
@@ -181,7 +182,9 @@ class StartMigrationHandler implements MessageHandlerInterface
 
         /** @var TaskEntity $taskEntity */
         foreach ($tasks as $taskEntity) {
-            $this->messageBus->dispatch(new RunTask($taskEntity->getId()));
+            /** @var int $taskId */
+            $taskId = $taskEntity->getId();
+            $this->messageBus->dispatch(new RunTask($taskId));
         }
     }
 

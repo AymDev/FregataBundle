@@ -33,6 +33,7 @@ class RunController extends AbstractController
         $startMigrationForm->handleRequest($request);
 
         if ($startMigrationForm->isSubmitted() && $startMigrationForm->isValid()) {
+            /** @var string $migrationName */
             $migrationName = $startMigrationForm->get('migration')->getData();
             $bus->dispatch(new StartMigration($migrationName));
 

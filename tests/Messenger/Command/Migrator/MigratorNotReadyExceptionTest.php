@@ -10,9 +10,22 @@ use Tests\Fregata\FregataBundle\Messenger\AbstractMessengerTestCase;
 class MigratorNotReadyExceptionTest extends AbstractMessengerTestCase
 {
     /**
+     * The migrator must have a migration as its readiness depends on it.
+     */
+    public function testMigratorMustHaveAMigration(): void
+    {
+        // Migrator creation
+        $migrator = new MigratorEntity();
+
+        // Exception test
+        self::expectException(\LogicException::class);
+        new MigratorNotReadyException($migrator);
+    }
+
+    /**
      * The exception message must contain important information
      */
-    public function testExceptionMessageContent()
+    public function testExceptionMessageContent(): void
     {
         // Migrator creation
         $migrator = (new MigratorEntity())
@@ -32,8 +45,9 @@ class MigratorNotReadyExceptionTest extends AbstractMessengerTestCase
         $exception = new MigratorNotReadyException($migrator);
         $message = $exception->getMessage();
 
-        self::assertStringContainsString($migrator->getId(), $message);
+        self::assertStringContainsString((string)$migrator->getId(), $message);
         self::assertStringContainsString($migrator->getStatus(), $message);
+        self::assertInstanceOf(MigrationEntity::class, $migrator->getMigration());
         self::assertStringContainsString($migrator->getMigration()->getStatus(), $message);
     }
 }

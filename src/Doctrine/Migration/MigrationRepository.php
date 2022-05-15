@@ -11,6 +11,7 @@ use Doctrine\Persistence\ManagerRegistry;
 
 /**
  * @internal
+ * @extends ServiceEntityRepository<MigrationEntity>
  */
 class MigrationRepository extends ServiceEntityRepository
 {
@@ -27,18 +28,19 @@ class MigrationRepository extends ServiceEntityRepository
      */
     public function getRunning(): Collection
     {
-        return new ArrayCollection(
-            $this->createQueryBuilder('m')
-                ->where('m.status NOT IN(:statuses)')
-                ->setParameter('statuses', [
-                    MigrationEntity::STATUS_CANCELED,
-                    MigrationEntity::STATUS_FAILURE,
-                    MigrationEntity::STATUS_FINISHED,
-                ])
-                ->orderBy('m.startedAt', 'DESC')
-                ->getQuery()
-                ->getResult()
-        );
+        /** @var MigrationEntity[] $runningMigrations */
+        $runningMigrations = $this->createQueryBuilder('m')
+            ->where('m.status NOT IN(:statuses)')
+            ->setParameter('statuses', [
+                MigrationEntity::STATUS_CANCELED,
+                MigrationEntity::STATUS_FAILURE,
+                MigrationEntity::STATUS_FINISHED,
+            ])
+            ->orderBy('m.startedAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+
+        return new ArrayCollection($runningMigrations);
     }
 
     /**
@@ -46,11 +48,14 @@ class MigrationRepository extends ServiceEntityRepository
      */
     public function getLast(): ?MigrationEntity
     {
-        return $this->createQueryBuilder('m')
+        /** @var null|MigrationEntity $lastMigration */
+        $lastMigration = $this->createQueryBuilder('m')
             ->orderBy('m.finishedAt', 'DESC')
             ->setMaxResults(1)
             ->getQuery()
             ->getOneOrNullResult();
+
+        return $lastMigration;
     }
 
     private function createHistoryQuery(int $page): QueryBuilder
@@ -65,6 +70,7 @@ class MigrationRepository extends ServiceEntityRepository
 
     /**
      * Get a run history page
+     * @return Paginator<MigrationEntity>
      */
     public function getPage(int $page): Paginator
     {
@@ -73,6 +79,7 @@ class MigrationRepository extends ServiceEntityRepository
 
     /**
      * Get a run history page for a specific migration
+     * @return Paginator<MigrationEntity>
      */
     public function getPageForService(string $serviceId, int $page): Paginator
     {

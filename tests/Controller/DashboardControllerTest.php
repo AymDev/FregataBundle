@@ -30,8 +30,14 @@ class DashboardControllerTest extends AbstractFunctionalTestCase
         self::assertResponseIsSuccessful();
         self::assertSelectorTextSame('h1.title', 'Running migrations: 2');
         self::assertCount(2, $crawler->filter('table > tbody > tr'));
-        self::assertSelectorTextSame('table > tbody > tr:first-child > td:first-child', $firstMigration->getId());
-        self::assertSelectorTextSame('table > tbody > tr:last-child > td:first-child', $secondMigration->getId());
+        self::assertSelectorTextSame(
+            'table > tbody > tr:first-child > td:first-child',
+            (string)$firstMigration->getId()
+        );
+        self::assertSelectorTextSame(
+            'table > tbody > tr:last-child > td:first-child',
+            (string)$secondMigration->getId()
+        );
     }
 
     /**
@@ -45,6 +51,6 @@ class DashboardControllerTest extends AbstractFunctionalTestCase
         self::assertResponseIsSuccessful();
         self::assertSelectorTextSame('h1.title', 'Last run migration:');
         self::assertCount(1, $crawler->filter('table > tbody > tr'));
-        self::assertSelectorTextSame('table > tbody > tr > td:first-child', $migration->getId());
+        self::assertSelectorTextSame('table > tbody > tr > td:first-child', (string)$migration->getId());
     }
 }

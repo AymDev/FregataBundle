@@ -7,6 +7,7 @@ use Doctrine\Persistence\ManagerRegistry;
 
 /**
  * @internal
+ * @extends ServiceEntityRepository<MigratorEntity>
  */
 class MigratorRepository extends ServiceEntityRepository
 {

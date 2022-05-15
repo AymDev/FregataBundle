@@ -40,7 +40,7 @@ class MigrationExecuteCommand extends FrameworkMigrationExecuteCommand
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         // Let the framework command handle the migration
-        if ($input->getOption('synchronous')) {
+        if (true === $input->getOption('synchronous')) {
             return parent::execute($input, $output);
         }
 

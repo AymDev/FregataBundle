@@ -15,6 +15,7 @@ use Fregata\FregataBundle\Messenger\Command\Task\RunTaskHandler;
 use Fregata\Migration\TaskInterface;
 use Psr\Log\NullLogger;
 use Symfony\Component\DependencyInjection\ServiceLocator;
+use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Tests\Fregata\FregataBundle\Messenger\AbstractMessengerTestCase;
 
@@ -79,10 +80,13 @@ class RunTaskHandlerTest extends AbstractMessengerTestCase
 
         $task = $this->createTaskEntity($migration, $taskType, $taskStatus);
 
+        /** @var TaskRepository $taskRepository */
+        $taskRepository = self::getContainer()->get(TaskRepository::class);
+
         $handler = new RunTaskHandler(
             new ServiceLocator($this->servicesForLocator),
             $this->getEntityManager(),
-            $this->getEntityManager()->getRepository(TaskEntity::class),
+            $taskRepository,
             $this->getMessageBus(),
             $this->getLogger(),
         );
@@ -111,6 +115,29 @@ class RunTaskHandlerTest extends AbstractMessengerTestCase
     }
 
     /**
+     * Task without migration must trigger an error
+     */
+    public function testFailOnMissingMigration(): void
+    {
+        $taskRepository = self::createMock(TaskRepository::class);
+        $taskRepository->method('find')->willReturn(new TaskEntity());
+
+        $handler = new RunTaskHandler(
+            new ServiceLocator([]),
+            self::createMock(EntityManagerInterface::class),
+            $taskRepository,
+            self::createMock(MessageBusInterface::class),
+            new NullLogger()
+        );
+
+        self::expectException(\RuntimeException::class);
+        self::expectExceptionMessage('Task has no migration.');
+
+        $message = new RunTask(0);
+        $handler($message);
+    }
+
+    /**
      * Task must not run multiple times
      */
     public function testRunTaskOnlyOnce(): void
@@ -127,7 +154,7 @@ class RunTaskHandlerTest extends AbstractMessengerTestCase
             TaskEntity::STATUS_RUNNING
         );
 
-        $message = new RunTask($task->getId());
+        $message = new RunTask((int)$task->getId());
         $handler($message);
 
         self::assertSame(TaskEntity::STATUS_RUNNING, $task->getStatus());
@@ -141,7 +168,7 @@ class RunTaskHandlerTest extends AbstractMessengerTestCase
     {
         [$handler, $task] = $this->createHandlerWithEntities($migrationStatus, TaskEntity::TASK_BEFORE);
 
-        $message = new RunTask($task->getId());
+        $message = new RunTask((int)$task->getId());
         $handler($message);
 
         self::assertSame(TaskEntity::STATUS_CANCELED, $task->getStatus());
@@ -168,7 +195,7 @@ class RunTaskHandlerTest extends AbstractMessengerTestCase
         self::expectException(\RuntimeException::class);
         self::expectExceptionMessage('Unknown task type.');
 
-        $message = new RunTask($task->getId());
+        $message = new RunTask((int)$task->getId());
         $handler($message);
     }
 
@@ -183,7 +210,7 @@ class RunTaskHandlerTest extends AbstractMessengerTestCase
         self::expectException(\RuntimeException::class);
         self::expectExceptionMessage('Migration in invalid state to run task.');
 
-        $message = new RunTask($task->getId());
+        $message = new RunTask((int)$task->getId());
         $handler($message);
     }
 
@@ -222,7 +249,7 @@ class RunTaskHandlerTest extends AbstractMessengerTestCase
         // Create a user defined before task
         $this->createTaskEntity($migration, TaskEntity::TASK_BEFORE, TaskEntity::STATUS_CREATED, 'user_task');
 
-        $message = new RunTask($task->getId());
+        $message = new RunTask((int)$task->getId());
         $handler($message);
 
         self::assertSame(MigrationEntity::STATUS_BEFORE_TASKS, $migration->getStatus());
@@ -249,7 +276,7 @@ class RunTaskHandlerTest extends AbstractMessengerTestCase
         // Create a core after task
         $this->createTaskEntity($migration, TaskEntity::TASK_AFTER, TaskEntity::STATUS_CREATED, 'core_task');
 
-        $message = new RunTask($task->getId());
+        $message = new RunTask((int)$task->getId());
         $handler($message);
 
         self::assertSame(MigrationEntity::STATUS_CORE_AFTER_TASKS, $migration->getStatus());
@@ -276,7 +303,7 @@ class RunTaskHandlerTest extends AbstractMessengerTestCase
         // Create a user defined before task
         $this->createTaskEntity($migration, TaskEntity::TASK_BEFORE, TaskEntity::STATUS_FINISHED, 'user_task');
 
-        $message = new RunTask($task->getId());
+        $message = new RunTask((int)$task->getId());
         $handler($message);
 
         self::assertSame(MigrationEntity::STATUS_CORE_BEFORE_TASKS, $migration->getStatus());
@@ -305,7 +332,7 @@ class RunTaskHandlerTest extends AbstractMessengerTestCase
         // Create a user defined after task
         $this->createTaskEntity($migration, TaskEntity::TASK_AFTER, TaskEntity::STATUS_CREATED, 'user_task');
 
-        $message = new RunTask($task->getId());
+        $message = new RunTask((int)$task->getId());
         $handler($message);
 
         self::assertSame(MigrationEntity::STATUS_AFTER_TASKS, $migration->getStatus());
@@ -329,7 +356,7 @@ class RunTaskHandlerTest extends AbstractMessengerTestCase
         );
 
         try {
-            $message = new RunTask($task->getId());
+            $message = new RunTask((int)$task->getId());
             $handler($message);
 
             throw new \Exception('A RuntimeException is expected to be thrown.');
@@ -352,7 +379,7 @@ class RunTaskHandlerTest extends AbstractMessengerTestCase
             MigrationEntity::STATUS_BEFORE_TASKS,
             TaskEntity::TASK_BEFORE
         );
-        $message = new RunTask($task->getId());
+        $message = new RunTask((int)$task->getId());
         $handler($message);
 
         self::assertSame(TaskEntity::STATUS_FINISHED, $task->getStatus());
@@ -383,7 +410,7 @@ class RunTaskHandlerTest extends AbstractMessengerTestCase
         // Create a remaining task of the current step
         $this->createTaskEntity($migration, $taskType, TaskEntity::STATUS_CREATED, 'remaining_task');
 
-        $message = new RunTask($task->getId());
+        $message = new RunTask((int)$task->getId());
         $handler($message);
 
         self::assertSame(TaskEntity::STATUS_FINISHED, $task->getStatus());
@@ -414,11 +441,12 @@ class RunTaskHandlerTest extends AbstractMessengerTestCase
 
         $nextTask = $this->createTaskEntity($migration, $taskType, TaskEntity::STATUS_CREATED, 'next_step_task');
 
-        $message = new RunTask($task->getId());
+        $message = new RunTask((int)$task->getId());
         $handler($message);
 
         self::assertSame(TaskEntity::STATUS_FINISHED, $task->getStatus());
 
+        /** @var Envelope[] $envelopes */
         $envelopes = $this->getMessengerTransport()->get();
         self::assertCount(1, $envelopes);
 
@@ -427,6 +455,9 @@ class RunTaskHandlerTest extends AbstractMessengerTestCase
         self::assertSame($nextTask->getId(), $message->getTaskId());
     }
 
+    /**
+     * @return array{string, class-string<TaskInterface>, class-string<TaskInterface>, string}[]
+     */
     public function provideNextTaskStepScenarios(): array
     {
         return [
@@ -467,7 +498,7 @@ class RunTaskHandlerTest extends AbstractMessengerTestCase
         // Create a migrator
         $this->createMigratorEntity($migration);
 
-        $message = new RunTask($task->getId());
+        $message = new RunTask((int)$task->getId());
         $handler($message);
 
         self::assertSame(TaskEntity::STATUS_FINISHED, $task->getStatus());
@@ -493,11 +524,12 @@ class RunTaskHandlerTest extends AbstractMessengerTestCase
         // Create a migrator
         $this->createMigratorEntity($migration);
 
-        $message = new RunTask($task->getId());
+        $message = new RunTask((int)$task->getId());
         $handler($message);
 
         self::assertSame(TaskEntity::STATUS_FINISHED, $task->getStatus());
 
+        /** @var Envelope[] $envelopes */
         $envelopes = $this->getMessengerTransport()->get();
         self::assertCount(1, $envelopes);
 
@@ -505,6 +537,9 @@ class RunTaskHandlerTest extends AbstractMessengerTestCase
         self::assertInstanceOf(RunMigrator::class, $message);
     }
 
+    /**
+     * @return array{class-string<TaskInterface>, string}[]
+     */
     public function provideMigratorMessageDispatchingScenarios(): array
     {
         return [
@@ -533,7 +568,7 @@ class RunTaskHandlerTest extends AbstractMessengerTestCase
         // Create a remaining task
         $this->createTaskEntity($migration, TaskEntity::TASK_AFTER, TaskEntity::STATUS_CREATED, 'remaining_task');
 
-        $message = new RunTask($task->getId());
+        $message = new RunTask((int)$task->getId());
         $handler($message);
 
         self::assertSame(TaskEntity::STATUS_FINISHED, $task->getStatus());
@@ -556,13 +591,16 @@ class RunTaskHandlerTest extends AbstractMessengerTestCase
             TaskEntity::TASK_AFTER
         );
 
-        $message = new RunTask($task->getId());
+        $message = new RunTask((int)$task->getId());
         $handler($message);
 
         self::assertSame(TaskEntity::STATUS_FINISHED, $task->getStatus());
         self::assertSame(MigrationEntity::STATUS_FINISHED, $migration->getStatus());
     }
 
+    /**
+     * @return array{class-string<TaskInterface>, string}[]
+     */
     public function provideFinishedMigrationScenarios(): array
     {
         return [

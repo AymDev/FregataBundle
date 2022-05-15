@@ -15,7 +15,7 @@ class FregataBundleTest extends TestCase
     /**
      * Check if the extension can be loaded
      */
-    public function testBundleExtensionIsLoadable()
+    public function testBundleExtensionIsLoadable(): void
     {
         $bundle = new FregataBundle();
         $extension = $bundle->getContainerExtension();
@@ -26,7 +26,7 @@ class FregataBundleTest extends TestCase
     /**
      * Check if compiler passes are registered
      */
-    public function testCompilerPasses()
+    public function testCompilerPasses(): void
     {
         $container = new ContainerBuilder();
         $bundle = new FregataBundle();

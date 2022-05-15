@@ -19,7 +19,7 @@ use Symfony\Component\DependencyInjection\ServiceLocator;
 
 class FregataExtensionTest extends TestCase
 {
-    public function testHandlersAreRegistered()
+    public function testHandlersAreRegistered(): void
     {
         $container = new ContainerBuilder();
         $extension = new FregataExtension();
@@ -46,6 +46,7 @@ class FregataExtensionTest extends TestCase
         $extension = new FregataExtension();
 
         $task = self::getMockForAbstractClass(TaskInterface::class);
+        /** @var class-string<TaskInterface> $taskClass */
         $taskClass = get_class($task);
 
         $configuration = [
@@ -90,6 +91,7 @@ class FregataExtensionTest extends TestCase
         $extension = new FregataExtension();
 
         $migrator = self::getMockForAbstractClass(MigratorInterface::class);
+        /** @var class-string<MigratorInterface> $migratorClass */
         $migratorClass = get_class($migrator);
 
         $configuration = [

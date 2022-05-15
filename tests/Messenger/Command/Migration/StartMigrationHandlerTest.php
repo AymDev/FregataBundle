@@ -25,7 +25,7 @@ class StartMigrationHandlerTest extends AbstractMessengerTestCase
     /**
      * Aborts the migration if unknown
      */
-    public function testThrowOnUnknownMigration()
+    public function testThrowOnUnknownMigration(): void
     {
         self::expectException(\LogicException::class);
 
@@ -42,7 +42,7 @@ class StartMigrationHandlerTest extends AbstractMessengerTestCase
     /**
      * Migration, task and migrator entities must be persisted
      */
-    public function testEntitiesArePersisted()
+    public function testEntitiesArePersisted(): void
     {
         // Configure migration
         $migration = new Migration();
@@ -83,6 +83,7 @@ class StartMigrationHandlerTest extends AbstractMessengerTestCase
         // Migrator entity assertions
         /** @var MigratorEntity $migratorEntity */
         $migratorEntity = $migrationEntity->getMigrators()->first();
+        self::assertIsString($migratorEntity->getServiceId());
         self::assertStringStartsWith('fregata.migration.testing.migrator.', $migratorEntity->getServiceId());
         self::assertSame(MigratorEntity::STATUS_CREATED, $migratorEntity->getStatus());
 
@@ -93,6 +94,7 @@ class StartMigrationHandlerTest extends AbstractMessengerTestCase
 
         /** @var TaskEntity $beforeTaskEntity */
         $beforeTaskEntity = $beforeTaskEntities->first();
+        self::assertIsString($beforeTaskEntity->getServiceId());
         self::assertStringStartsWith('fregata.migration.testing.task.before.', $beforeTaskEntity->getServiceId());
         self::assertSame(TaskEntity::STATUS_CREATED, $beforeTaskEntity->getStatus());
 
@@ -103,6 +105,7 @@ class StartMigrationHandlerTest extends AbstractMessengerTestCase
 
         /** @var TaskEntity $afterTaskEntity */
         $afterTaskEntity = $afterTaskEntities->first();
+        self::assertIsString($afterTaskEntity->getServiceId());
         self::assertStringStartsWith('fregata.migration.testing.task.after.', $afterTaskEntity->getServiceId());
         self::assertSame(TaskEntity::STATUS_CREATED, $afterTaskEntity->getStatus());
     }
@@ -110,7 +113,7 @@ class StartMigrationHandlerTest extends AbstractMessengerTestCase
     /**
      * Before task messages must be dispatched if the migration have some
      */
-    public function testBeforeTaskMessagesAreDispatched()
+    public function testBeforeTaskMessagesAreDispatched(): void
     {
         // Configure migration
         $migration = new Migration();
@@ -140,7 +143,7 @@ class StartMigrationHandlerTest extends AbstractMessengerTestCase
      * Only user defined before tasks messages are dispatched
      * when there is both user defined and core tasks in a migration
      */
-    public function testOnlyUserBeforeTaskMessagesAreDispatched()
+    public function testOnlyUserBeforeTaskMessagesAreDispatched(): void
     {
         // Configure migration
         $migration = new Migration();
@@ -165,6 +168,7 @@ class StartMigrationHandlerTest extends AbstractMessengerTestCase
         $message = $messages[0]->getMessage();
         self::assertInstanceOf(RunTask::class, $message);
 
+        /** @var string $taskCount */
         $taskCount = $this->getEntityManager()
             ->getConnection()
             ->executeQuery('SELECT COUNT(*) FROM fregata_task')
@@ -176,7 +180,7 @@ class StartMigrationHandlerTest extends AbstractMessengerTestCase
     /**
      * Core before tasks messages are dispatched when there is no user defined tasks in a migration
      */
-    public function testCoreBeforeTaskMessagesAreDispatched()
+    public function testCoreBeforeTaskMessagesAreDispatched(): void
     {
         // Configure migration
         $migration = new Migration();
@@ -203,7 +207,7 @@ class StartMigrationHandlerTest extends AbstractMessengerTestCase
     /**
      * Migrator messages must be dispatched if there is no before task
      */
-    public function testMigratorMessagesAreDispatched()
+    public function testMigratorMessagesAreDispatched(): void
     {
         // Configure migration
         $migration = new Migration();
@@ -229,7 +233,7 @@ class StartMigrationHandlerTest extends AbstractMessengerTestCase
     /**
      * Dependent migrators messages must not be dispatched
      */
-    public function testOnlyIndependentMigratorMessagesAreDispatched()
+    public function testOnlyIndependentMigratorMessagesAreDispatched(): void
     {
         // Configure migration
         $migration = new Migration();
@@ -257,6 +261,7 @@ class StartMigrationHandlerTest extends AbstractMessengerTestCase
         $message = $messages[0]->getMessage();
         self::assertInstanceOf(RunMigrator::class, $message);
 
+        /** @var string $migratorsCount */
         $migratorsCount = $this->getEntityManager()
             ->getConnection()
             ->executeQuery('SELECT COUNT(*) FROM fregata_migrator')

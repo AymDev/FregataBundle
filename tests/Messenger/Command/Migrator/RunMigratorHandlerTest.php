@@ -84,10 +84,13 @@ class RunMigratorHandlerTest extends AbstractMessengerTestCase
 
         $migrator = $this->createMigratorEntity($migration, $migratorStatus);
 
+        /** @var MigratorRepository $migratorRepository */
+        $migratorRepository = self::getContainer()->get(MigratorRepository::class);
+
         $handler = new RunMigratorHandler(
             new ServiceLocator($this->servicesForLocator),
             $this->getEntityManager(),
-            $this->getEntityManager()->getRepository(MigratorEntity::class),
+            $migratorRepository,
             $this->getMessageBus(),
             $this->getLogger(),
         );
@@ -98,10 +101,38 @@ class RunMigratorHandlerTest extends AbstractMessengerTestCase
     /**
      * Unknown migrator ID must trigger an error
      */
+    public function testFailOnMissingMigration(): void
+    {
+        $migrator = self::createMock(MigratorEntity::class);
+        $migrator->expects(self::atLeastOnce())
+            ->method('getId')
+            ->willReturn(42);
+
+        $migratorRepository = self::createMock(MigratorRepository::class);
+        $migratorRepository->method('find')->willReturn($migrator);
+
+        $handler = new RunMigratorHandler(
+            new ServiceLocator([]),
+            self::createMock(EntityManagerInterface::class),
+            $migratorRepository,
+            self::createMock(MessageBusInterface::class),
+            new NullLogger()
+        );
+
+        self::expectException(\RuntimeException::class);
+        self::expectExceptionMessage('Migrator has no migration.');
+
+        $message = new RunMigrator($migrator);
+        $handler($message);
+    }
+
+    /**
+     * Unknown migrator ID must trigger an error
+     */
     public function testFailOnUnknownMigrator(): void
     {
         $migrator = self::createMock(MigratorEntity::class);
-        $migrator->expects(self::once())
+        $migrator->expects(self::atLeastOnce())
             ->method('getId')
             ->willReturn(42);
 

@@ -39,7 +39,7 @@ class MigrationControllerTest extends AbstractFunctionalTestCase
 
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('.message', 'Archived migration');
-        self::assertSelectorTextSame('table > tbody > tr > td', $migration->getId());
+        self::assertSelectorTextSame('table > tbody > tr > td', (string)$migration->getId());
     }
 
     /**
@@ -58,7 +58,7 @@ class MigrationControllerTest extends AbstractFunctionalTestCase
         $this->client->request('GET', '/fregata/migration/test_migration');
 
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextSame('table > tbody > tr > td', $migration->getId());
+        self::assertSelectorTextSame('table > tbody > tr > td', (string)$migration->getId());
     }
 
     /**
@@ -79,7 +79,7 @@ class MigrationControllerTest extends AbstractFunctionalTestCase
         $this->client->request('GET', '/fregata/migration/test_migration');
 
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextSame('table > tbody > tr > td:first-child', $newest->getId());
+        self::assertSelectorTextSame('table > tbody > tr > td:first-child', (string)$newest->getId());
 
         // Second page
         $this->client->request('GET', '/fregata/migration/test_migration', [
@@ -87,6 +87,6 @@ class MigrationControllerTest extends AbstractFunctionalTestCase
         ]);
 
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextSame('table > tbody > tr > td:first-child', $oldest->getId());
+        self::assertSelectorTextSame('table > tbody > tr > td:first-child', (string)$oldest->getId());
     }
 }

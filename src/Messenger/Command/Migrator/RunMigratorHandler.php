@@ -26,8 +26,8 @@ class RunMigratorHandler implements MessageHandlerInterface
     private MessageBusInterface $messageBus;
     private LoggerInterface $logger;
 
-    /** @var MigratorEntity|null current task if found */
-    private ?MigratorEntity $migratorEntity = null;
+    private MigratorEntity $migratorEntity;
+    private MigrationEntity $migrationEntity;
 
     public function __construct(
         ServiceLocator $serviceLocator,
@@ -43,15 +43,23 @@ class RunMigratorHandler implements MessageHandlerInterface
         $this->logger = $logger;
     }
 
-    public function __invoke(RunMigrator $runMigrator)
+    public function __invoke(RunMigrator $runMigrator): void
     {
         // Find the migrator entity
-        $this->migratorEntity = $this->migratorRepository->find($runMigrator->getMigratorId());
-        if (null === $this->migratorEntity) {
+        $migratorEntity = $this->migratorRepository->find($runMigrator->getMigratorId());
+        if (null === $migratorEntity) {
             $this->failure('Unknown migrator ID.', [
                 'id' => $runMigrator->getMigratorId(),
             ]);
         }
+        $this->migratorEntity = $migratorEntity;
+
+        if (null === $this->migratorEntity->getMigration()) {
+            $this->failure('Migrator has no migration.', [
+                'id' => $this->migratorEntity->getId(),
+            ]);
+        }
+        $this->migrationEntity = $this->migratorEntity->getMigration();
 
         // Do not run migrator multiple times
         if (MigratorEntity::STATUS_CREATED !== $this->migratorEntity->getStatus()) {
@@ -63,7 +71,7 @@ class RunMigratorHandler implements MessageHandlerInterface
 
         // Canceled/failed migration
         $cancelingStatuses = [MigrationEntity::STATUS_CANCELED, MigrationEntity::STATUS_FAILURE];
-        if (in_array($this->migratorEntity->getMigration()->getStatus(), $cancelingStatuses)) {
+        if (in_array($this->migrationEntity->getStatus(), $cancelingStatuses, true)) {
             $this->migratorEntity->setStatus(MigratorEntity::STATUS_CANCELED);
             $this->entityManager->flush();
             $this->logger->notice('Canceled migrator.', [
@@ -115,6 +123,7 @@ class RunMigratorHandler implements MessageHandlerInterface
 
     /**
      * Declares the current migrator as failed
+     * @param mixed[] $context
      * @return no-return
      */
     private function failure(string $message, array $context = []): void
@@ -123,15 +132,19 @@ class RunMigratorHandler implements MessageHandlerInterface
         $this->logger->critical($message, $context);
 
         // Set task and migration in the failure status
-        if (null !== $this->migratorEntity) {
+        if (isset($this->migratorEntity)) {
             $this->migratorEntity
                 ->setStatus(MigratorEntity::STATUS_FAILURE)
                 ->setFinishedAt();
+        }
 
-            $this->migratorEntity->getMigration()
+        if (isset($this->migrationEntity)) {
+            $this->migrationEntity
                 ->setStatus(MigrationEntity::STATUS_FAILURE)
                 ->setFinishedAt();
+        }
 
+        if (isset($this->migratorEntity) || isset($this->migrationEntity)) {
             $this->entityManager->flush();
         }
 
@@ -143,6 +156,12 @@ class RunMigratorHandler implements MessageHandlerInterface
      */
     private function getMigratorService(MigratorEntity $migratorEntity): MigratorInterface
     {
+        if (null === $migratorEntity->getServiceId()) {
+            $this->failure('Missing task service ID.', [
+                'taskId' => $migratorEntity->getId(),
+            ]);
+        }
+
         if (false === $this->serviceLocator->has($migratorEntity->getServiceId())) {
             $this->failure('Unknown migrator service.', [
                 'migratorId' => $migratorEntity->getId(),
@@ -150,7 +169,9 @@ class RunMigratorHandler implements MessageHandlerInterface
             ]);
         }
 
-        return $this->serviceLocator->get($migratorEntity->getServiceId());
+        /** @var MigratorInterface $migratorService */
+        $migratorService = $this->serviceLocator->get($migratorEntity->getServiceId());
+        return $migratorService;
     }
 
     /**
@@ -167,18 +188,18 @@ class RunMigratorHandler implements MessageHandlerInterface
         ];
 
         // Invalid migration status
-        if (false === in_array($this->migratorEntity->getMigration()->getStatus(), $validMigrationStatuses)) {
+        if (false === in_array($this->migrationEntity->getStatus(), $validMigrationStatuses, true)) {
             $this->failure('Migration in invalid state to run task.', [
-                'migration'        => $this->migratorEntity->getMigration()->getId(),
-                'migration_status' => $this->migratorEntity->getMigration()->getStatus(),
+                'migration'        => $this->migrationEntity->getId(),
+                'migration_status' => $this->migrationEntity->getStatus(),
                 'migrator'         => $this->migratorEntity->getId(),
                 'migrator_status'  => $this->migratorEntity->getStatus(),
             ]);
         }
 
         // Migrators must wait for before tasks to complete
-        if (MigrationEntity::STATUS_MIGRATORS !== $this->migratorEntity->getMigration()->getStatus()) {
-            $remainingTasks = $this->migratorEntity->getMigration()->getBeforeTasks()
+        if (MigrationEntity::STATUS_MIGRATORS !== $this->migrationEntity->getStatus()) {
+            $remainingTasks = $this->migrationEntity->getBeforeTasks()
                 ->filter(fn(TaskEntity $task) => false === $task->hasEnded());
 
             if ($remainingTasks->count() > 0) {
@@ -204,13 +225,13 @@ class RunMigratorHandler implements MessageHandlerInterface
      */
     private function updateMigrationStatus(string $status): void
     {
-        if ($status !== $this->migratorEntity->getMigration()->getStatus()) {
+        if ($status !== $this->migrationEntity->getStatus()) {
             // Set start time if not set already
-            $this->migratorEntity->getMigration()->setStartedAt();
+            $this->migrationEntity->setStartedAt();
 
-            $this->migratorEntity->getMigration()->setStatus($status);
+            $this->migrationEntity->setStatus($status);
             $this->logger->info(sprintf('Migration reached the %s status', $status), [
-                'migration' => $this->migratorEntity->getMigration()->getId(),
+                'migration' => $this->migrationEntity->getId(),
             ]);
         }
     }
@@ -233,7 +254,7 @@ class RunMigratorHandler implements MessageHandlerInterface
         }
 
         // Check remaining migrators before dispatching after task messages
-        $remainingMigrators = $this->migratorEntity->getMigration()->getMigrators()
+        $remainingMigrators = $this->migrationEntity->getMigrators()
             ->filter(fn(MigratorEntity $migrator) => false === $migrator->hasEnded());
 
         if ($remainingMigrators->count() > 0) {
@@ -241,9 +262,11 @@ class RunMigratorHandler implements MessageHandlerInterface
         }
 
         // Check for after tasks
-        if ($this->migratorEntity->getMigration()->getAfterTasks()->count() > 0) {
-            foreach ($this->migratorEntity->getMigration()->getAfterTasks() as $afterTask) {
-                $this->messageBus->dispatch(new RunTask($afterTask->getId()));
+        if ($this->migrationEntity->getAfterTasks()->count() > 0) {
+            foreach ($this->migrationEntity->getAfterTasks() as $afterTask) {
+                /** @var int $taskId */
+                $taskId = $afterTask->getId();
+                $this->messageBus->dispatch(new RunTask($taskId));
             }
             return;
         }
@@ -251,7 +274,7 @@ class RunMigratorHandler implements MessageHandlerInterface
 
         // End of the migration
         $this->updateMigrationStatus(MigrationEntity::STATUS_FINISHED);
-        $this->migratorEntity->getMigration()->setFinishedAt();
+        $this->migrationEntity->setFinishedAt();
         $this->entityManager->flush();
     }
 }

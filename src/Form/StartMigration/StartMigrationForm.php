@@ -14,7 +14,7 @@ use Symfony\Component\Validator\Constraints\NotBlank;
  */
 class StartMigrationForm extends AbstractType
 {
-    public function buildForm(FormBuilderInterface $builder, array $options)
+    public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         /** @var array<string, mixed> $migrations */
         $migrations = $options['migrations'];
@@ -30,7 +30,7 @@ class StartMigrationForm extends AbstractType
         ;
     }
 
-    public function configureOptions(OptionsResolver $resolver)
+    public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults([
             'migrations' => [],

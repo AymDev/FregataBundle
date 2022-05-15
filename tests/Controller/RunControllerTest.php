@@ -55,7 +55,7 @@ class RunControllerTest extends AbstractFunctionalTestCase
         $this->client->request('GET', '/fregata/run/history');
 
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextSame('table > tbody > tr > td', $newest->getId());
+        self::assertSelectorTextSame('table > tbody > tr > td', (string)$newest->getId());
 
         // Second page
         $this->client->request('GET', '/fregata/run/history', [
@@ -63,7 +63,7 @@ class RunControllerTest extends AbstractFunctionalTestCase
         ]);
 
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextSame('table > tbody > tr > td', $oldest->getId());
+        self::assertSelectorTextSame('table > tbody > tr > td', (string)$oldest->getId());
     }
 
     public function testRunDetails(): void
