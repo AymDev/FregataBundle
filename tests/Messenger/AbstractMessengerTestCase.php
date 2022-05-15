@@ -3,7 +3,6 @@
 namespace Tests\Fregata\FregataBundle\Messenger;
 
 use Doctrine\ORM\EntityManagerInterface;
-use Psr\Log\Test\TestLogger;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\MessageBus;
@@ -12,19 +11,21 @@ use Symfony\Component\Messenger\Middleware\SendMessageMiddleware;
 use Symfony\Component\Messenger\Transport\InMemoryTransport;
 use Symfony\Component\Messenger\Transport\Sender\SendersLocatorInterface;
 use Symfony\Component\Messenger\Transport\Serialization\PhpSerializer;
+use Tests\Fregata\FregataBundle\TestLogger;
 
 abstract class AbstractMessengerTestCase extends KernelTestCase
 {
     protected ?EntityManagerInterface $entityManager = null;
     protected ?MessageBusInterface $messageBus = null;
     protected ?InMemoryTransport $messengerTransport = null;
-    protected ?TestLogger $logger = null;
+    protected TestLogger $logger;
 
     protected function setUp(): void
     {
         parent::setUp();
 
         self::bootKernel();
+        $this->logger = new TestLogger();
 
         $this->getEntityManager()->getConnection()->executeStatement(
             /** @lang SQLite */
@@ -82,12 +83,6 @@ abstract class AbstractMessengerTestCase extends KernelTestCase
         /** @var EntityManagerInterface $entityManager */
         $entityManager = static::getContainer()->get(EntityManagerInterface::class);
         return $entityManager;
-    }
-
-    protected function getLogger(): TestLogger
-    {
-        $this->logger ??= new TestLogger();
-        return $this->logger;
     }
 
     protected function getMessengerTransport(): InMemoryTransport

@@ -92,7 +92,7 @@ class RunMigratorHandlerTest extends AbstractMessengerTestCase
             $this->getEntityManager(),
             $migratorRepository,
             $this->getMessageBus(),
-            $this->getLogger(),
+            $this->logger,
         );
 
         return [$handler, $migrator, $migration];
@@ -239,9 +239,12 @@ class RunMigratorHandlerTest extends AbstractMessengerTestCase
         $handler($message);
 
         self::assertSame(MigrationEntity::STATUS_BEFORE_TASKS, $migration->getStatus());
-        self::assertTrue($this->getLogger()->hasNoticeThatMatches(
-            '~Migrator \d+ in \w+ status is not ready as the migration is in \w+ state~'
-        ));
+        self::assertArrayHasKey('notice', $this->logger->entries);
+        self::assertCount(1, $this->logger->entries['notice']);
+        self::assertMatchesRegularExpression(
+            '~Migrator \d+ in \w+ status is not ready as the migration is in \w+ state~',
+            $this->logger->entries['notice'][0]
+        );
     }
 
     /**
@@ -258,9 +261,12 @@ class RunMigratorHandlerTest extends AbstractMessengerTestCase
         $handler($message);
 
         self::assertSame(MigrationEntity::STATUS_MIGRATORS, $migration->getStatus());
-        self::assertTrue($this->getLogger()->hasNoticeThatMatches(
-            '~Migrator \d+ in \w+ status is not ready as the migration is in \w+ state~'
-        ));
+        self::assertArrayHasKey('notice', $this->logger->entries);
+        self::assertCount(1, $this->logger->entries['notice']);
+        self::assertMatchesRegularExpression(
+            '~Migrator \d+ in \w+ status is not ready as the migration is in \w+ state~',
+            $this->logger->entries['notice'][0]
+        );
     }
 
     /**
@@ -282,7 +288,12 @@ class RunMigratorHandlerTest extends AbstractMessengerTestCase
         $handler($message);
 
         self::assertSame(MigrationEntity::STATUS_MIGRATORS, $migration->getStatus());
-        self::assertTrue($this->getLogger()->hasInfoThatMatches('~Migration reached the \w+ status~'));
+        self::assertArrayHasKey('info', $this->logger->entries);
+        self::assertCount(1, $this->logger->entries['info']);
+        self::assertMatchesRegularExpression(
+            '~Migration reached the \w+ status~',
+            $this->logger->entries['info'][0]
+        );
     }
 
     /**

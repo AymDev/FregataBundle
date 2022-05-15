@@ -79,16 +79,10 @@ class FregataExtension extends FrameworkExtension
 
         // Execute a task
         $taskDefinitions = array_keys($container->findTaggedServiceIds(self::TAG_TASK));
-        $taskRefMap = array_combine(
+        $serviceLocator = ServiceLocatorTagPass::register($container, array_combine(
             $taskDefinitions,
             array_map(fn (string $taskId) => new Reference($taskId), $taskDefinitions)
-        );
-
-        if (false === $taskRefMap) {
-            throw new \LogicException('Cannot build task services reference map.');
-        }
-
-        $serviceLocator = ServiceLocatorTagPass::register($container, $taskRefMap);
+        ));
 
         $runTaskHandlerDefinition = new Definition(RunTaskHandler::class);
         $runTaskHandlerDefinition
@@ -100,16 +94,10 @@ class FregataExtension extends FrameworkExtension
 
         // Run a migrator
         $migratorDefinitions = array_keys($container->findTaggedServiceIds(self::TAG_MIGRATOR));
-        $migratorRefMap = array_combine(
+        $serviceLocator = ServiceLocatorTagPass::register($container, array_combine(
             $migratorDefinitions,
             array_map(fn (string $migratorId) => new Reference($migratorId), $migratorDefinitions)
-        );
-
-        if (false === $migratorRefMap) {
-            throw new \LogicException('Cannot build migrator services reference map.');
-        }
-
-        $serviceLocator = ServiceLocatorTagPass::register($container, $migratorRefMap);
+        ));
 
         $runMigratorHandlerDefinition = new Definition(RunMigratorHandler::class);
         $runMigratorHandlerDefinition

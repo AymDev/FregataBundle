@@ -1,9 +1,9 @@
-FROM php:7.4.19-alpine
+FROM php:8.1.6-alpine
 
 WORKDIR /var/www/html
 
-COPY --from=composer:2.0.12 /usr/bin/composer /usr/bin/composer
-COPY --from=mlocati/php-extension-installer:1.2.24 /usr/bin/install-php-extensions /usr/local/bin/
+COPY --from=composer:2.3.5 /usr/bin/composer /usr/bin/composer
+COPY --from=mlocati/php-extension-installer:1.5.14 /usr/bin/install-php-extensions /usr/local/bin/
 
 RUN apk add --no-cache bash && \
     install-php-extensions pdo_pgsql && \
