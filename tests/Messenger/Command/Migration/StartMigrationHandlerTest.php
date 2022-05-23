@@ -243,7 +243,7 @@ class StartMigrationHandlerTest extends AbstractMessengerTestCase
 
         $migrator = self::createMock(MigratorInterface::class);
         $dependentMigrator = self::createMock(DependentMigratorInterface::class);
-        $dependentMigrator->method('getDependencies')->willReturn([get_class($migrator)]);
+        $dependentMigrator->method('getDependencies')->willReturn([$migrator::class]);
 
         $migration->add($migrator);
         $migration->add($dependentMigrator);

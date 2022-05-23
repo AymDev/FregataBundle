@@ -114,9 +114,8 @@ class RunMigratorHandler implements MessageHandlerInterface
     /**
      * Declares the current migrator as failed
      * @param mixed[] $context
-     * @return no-return
      */
-    private function failure(string $message, array $context = []): void
+    private function failure(string $message, array $context = []): never
     {
         // Log a message
         $this->logger->critical($message, $context);
@@ -172,7 +171,7 @@ class RunMigratorHandler implements MessageHandlerInterface
     {
         // Invalid migration status
         if (!$this->migrationEntity->getStatus()->canRunMigrator()) {
-            $this->failure('Migration in invalid state to run task.', [
+            $this->failure('Migration in invalid state to run migrator.', [
                 'migration'        => $this->migrationEntity->getId(),
                 'migration_status' => $this->migrationEntity->getStatus(),
                 'migrator'         => $this->migratorEntity->getId(),

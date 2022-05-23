@@ -50,9 +50,7 @@ class TaskEntity implements FregataComponentInterface
 
     public function setStartedAt(): self
     {
-        if (null === $this->startedAt) {
-            $this->startedAt = new \DateTime();
-        }
+        $this->startedAt ??= new \DateTime();
         return $this;
     }
 
@@ -63,9 +61,7 @@ class TaskEntity implements FregataComponentInterface
 
     public function setFinishedAt(): self
     {
-        if (null === $this->finishedAt) {
-            $this->finishedAt = new \DateTime();
-        }
+        $this->finishedAt ??= new \DateTime();
         return $this;
     }
 

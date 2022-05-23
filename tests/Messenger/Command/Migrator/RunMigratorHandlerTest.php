@@ -209,7 +209,7 @@ class RunMigratorHandlerTest extends AbstractMessengerTestCase
         [$handler, $migrator] = $this->createHandlerWithEntities($migrationStatus);
 
         self::expectException(\RuntimeException::class);
-        self::expectExceptionMessage('Migration in invalid state to run task.');
+        self::expectExceptionMessage('Migration in invalid state to run migrator.');
 
         $message = new RunMigrator($migrator);
         $handler($message);

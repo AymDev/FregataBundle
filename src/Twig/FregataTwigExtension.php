@@ -38,7 +38,7 @@ final class FregataTwigExtension extends AbstractExtension
 
     public function getObjectClass(object $obj): string
     {
-        return get_class($obj);
+        return $obj::class;
     }
 
     /**

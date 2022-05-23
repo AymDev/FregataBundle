@@ -110,9 +110,8 @@ class RunTaskHandler implements MessageHandlerInterface
     /**
      * Declares the current task as failed
      * @param mixed[] $context
-     * @return no-return
      */
-    private function failure(string $message, array $context = []): void
+    private function failure(string $message, array $context = []): never
     {
         // Log a message
         $this->logger->critical($message, $context);

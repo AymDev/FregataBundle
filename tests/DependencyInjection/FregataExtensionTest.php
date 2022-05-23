@@ -47,7 +47,7 @@ class FregataExtensionTest extends TestCase
 
         $task = self::getMockForAbstractClass(TaskInterface::class);
         /** @var class-string<TaskInterface> $taskClass */
-        $taskClass = get_class($task);
+        $taskClass = $task::class;
 
         $configuration = [
             'migrations' => [
@@ -92,7 +92,7 @@ class FregataExtensionTest extends TestCase
 
         $migrator = self::getMockForAbstractClass(MigratorInterface::class);
         /** @var class-string<MigratorInterface> $migratorClass */
-        $migratorClass = get_class($migrator);
+        $migratorClass = $migrator::class;
 
         $configuration = [
             'migrations' => [

@@ -91,8 +91,7 @@ class StartMigrationHandler implements MessageHandlerInterface
      */
     private function getServiceId(object $object): string
     {
-        $objectClass = get_class($object);
-        $serviceSuffix = new UnicodeString($objectClass);
+        $serviceSuffix = new UnicodeString($object::class);
         return $serviceSuffix->snake()->toString();
     }
 
@@ -154,7 +153,7 @@ class StartMigrationHandler implements MessageHandlerInterface
 
         $this->migrationEntity->addMigrator($migratorEntity);
         $this->entityManager->persist($migratorEntity);
-        $this->serviceMap[get_class($migrator)] = $migratorEntity;
+        $this->serviceMap[$migrator::class] = $migratorEntity;
     }
 
     /**
