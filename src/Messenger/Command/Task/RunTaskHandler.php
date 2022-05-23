@@ -63,8 +63,7 @@ class RunTaskHandler implements MessageHandlerInterface
         }
 
         // Canceled/failed migration
-        $cancelingStatuses = [MigrationStatus::CANCELED, MigrationStatus::FAILURE];
-        if (in_array($this->migrationEntity->getStatus(), $cancelingStatuses, true)) {
+        if ($this->migrationEntity->getStatus()->isCanceling()) {
             $this->taskEntity->setStatus(ComponentStatus::CANCELED);
             $this->entityManager->flush();
             $this->logger->notice('Canceled task.', [
@@ -181,25 +180,10 @@ class RunTaskHandler implements MessageHandlerInterface
         // Behaviour is a bit different for before/after tasks
         $isBefore = TaskType::BEFORE === $this->taskEntity->getType();
 
-        $validMigrationStatuses = [
-            TaskType::BEFORE->value => [
-                MigrationStatus::CREATED,
-                MigrationStatus::BEFORE_TASKS,
-                MigrationStatus::CORE_BEFORE_TASKS
-            ],
-            TaskType::AFTER->value => [
-                MigrationStatus::MIGRATORS,
-                MigrationStatus::CORE_AFTER_TASKS,
-                MigrationStatus::AFTER_TASKS
-            ],
-        ];
-
+        // Invalid migration status
         /** @var TaskType $taskType */
         $taskType = $this->taskEntity->getType();
-        $validStatuses = $validMigrationStatuses[$taskType->value];
-
-        // Invalid migration status
-        if (false === in_array($this->migrationEntity->getStatus(), $validStatuses, true)) {
+        if (!$this->migrationEntity->getStatus()->canRunTask($taskType)) {
             $this->failure('Migration in invalid state to run task.', [
                 'migration'        => $this->migrationEntity->getId(),
                 'migration_status' => $this->migrationEntity->getStatus(),

@@ -61,8 +61,7 @@ class RunMigratorHandler implements MessageHandlerInterface
         }
 
         // Canceled/failed migration
-        $cancelingStatuses = [MigrationStatus::CANCELED, MigrationStatus::FAILURE];
-        if (in_array($this->migrationEntity->getStatus(), $cancelingStatuses, true)) {
+        if ($this->migrationEntity->getStatus()->isCanceling()) {
             $this->migratorEntity->setStatus(ComponentStatus::CANCELED);
             $this->entityManager->flush();
             $this->logger->notice('Canceled migrator.', [
@@ -171,15 +170,8 @@ class RunMigratorHandler implements MessageHandlerInterface
      */
     private function checkMigrationStatus(): void
     {
-        $validMigrationStatuses = [
-            MigrationStatus::CREATED,
-            MigrationStatus::BEFORE_TASKS,
-            MigrationStatus::CORE_BEFORE_TASKS,
-            MigrationStatus::MIGRATORS,
-        ];
-
         // Invalid migration status
-        if (false === in_array($this->migrationEntity->getStatus(), $validMigrationStatuses, true)) {
+        if (!$this->migrationEntity->getStatus()->canRunMigrator()) {
             $this->failure('Migration in invalid state to run task.', [
                 'migration'        => $this->migrationEntity->getId(),
                 'migration_status' => $this->migrationEntity->getStatus(),
