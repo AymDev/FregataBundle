@@ -3,6 +3,12 @@
 **Symfony** bundle for the [Fregata](https://github.com/AymDev/Fregata) data migration framework. Provides an UI and
 executes migrations asynchronously using the **Messenger** component.
 
+![Testing](https://github.com/AymDev/FregataBundle/workflows/Testing/badge.svg)
+![Coding Standards](https://github.com/AymDev/FregataBundle/workflows/Coding%20Standards/badge.svg)
+![Bundle installation](https://github.com/AymDev/FregataBundle/workflows/Bundle%20installation/badge.svg)
+[![Latest Stable Version](https://poser.pugx.org/aymdev/fregata-bundle/v)](//packagist.org/packages/aymdev/fregata-bundle)
+[![License](https://poser.pugx.org/aymdev/fregata-bundle/license)](//packagist.org/packages/aymdev/fregata-bundle)
+
 **Documentation**:
 
 1. [Requirements](#requirements)
