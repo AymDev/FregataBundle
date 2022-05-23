@@ -3,10 +3,13 @@
 namespace Tests\Fregata\FregataBundle\Messenger\Command\Migrator;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Fregata\FregataBundle\Doctrine\ComponentStatus;
 use Fregata\FregataBundle\Doctrine\Migration\MigrationEntity;
+use Fregata\FregataBundle\Doctrine\Migration\MigrationStatus;
 use Fregata\FregataBundle\Doctrine\Migrator\MigratorEntity;
 use Fregata\FregataBundle\Doctrine\Migrator\MigratorRepository;
 use Fregata\FregataBundle\Doctrine\Task\TaskEntity;
+use Fregata\FregataBundle\Doctrine\Task\TaskType;
 use Fregata\FregataBundle\Messenger\Command\Migrator\MigratorNotReadyException;
 use Fregata\FregataBundle\Messenger\Command\Migrator\RunMigrator;
 use Fregata\FregataBundle\Messenger\Command\Migrator\RunMigratorHandler;
@@ -35,14 +38,13 @@ class RunMigratorHandlerTest extends AbstractMessengerTestCase
 
     private function createTaskEntity(
         MigrationEntity $migration,
-        string $taskType,
-        string $taskStatus = TaskEntity::STATUS_CREATED,
-        string $serviceId = 'task_service'
+        TaskType $taskType,
+        ComponentStatus $taskStatus = ComponentStatus::CREATED,
     ): TaskEntity {
         $task = (new TaskEntity())
             ->setType($taskType)
             ->setStatus($taskStatus)
-            ->setServiceId($serviceId);
+            ->setServiceId('task_service');
 
         $migration->addTask($task);
 
@@ -55,7 +57,7 @@ class RunMigratorHandlerTest extends AbstractMessengerTestCase
 
     private function createMigratorEntity(
         MigrationEntity $migration,
-        string $status = MigratorEntity::STATUS_CREATED
+        ComponentStatus $status = ComponentStatus::CREATED
     ): MigratorEntity {
         $migrator = (new MigratorEntity())
             ->setServiceId('migrator_service')
@@ -75,8 +77,8 @@ class RunMigratorHandlerTest extends AbstractMessengerTestCase
      * @return array{RunMigratorHandler, MigratorEntity, MigrationEntity}
      */
     private function createHandlerWithEntities(
-        string $migrationStatus,
-        string $migratorStatus = MigratorEntity::STATUS_CREATED
+        MigrationStatus $migrationStatus,
+        ComponentStatus $migratorStatus = ComponentStatus::CREATED
     ): array {
         $migration = (new MigrationEntity())
             ->setStatus($migrationStatus)
@@ -163,38 +165,38 @@ class RunMigratorHandlerTest extends AbstractMessengerTestCase
         ];
 
         [$handler, $migrator] = $this->createHandlerWithEntities(
-            MigrationEntity::STATUS_MIGRATORS,
-            MigratorEntity::STATUS_RUNNING
+            MigrationStatus::MIGRATORS,
+            ComponentStatus::RUNNING
         );
 
         $message = new RunMigrator($migrator);
         $handler($message);
 
-        self::assertSame(MigratorEntity::STATUS_RUNNING, $migrator->getStatus());
+        self::assertSame(ComponentStatus::RUNNING, $migrator->getStatus());
     }
 
     /**
      * Migrator must be cancel on migration failure/cancellation
      * @dataProvider provideCancellingMigrationStatuses
      */
-    public function testCancelMigratorOnInvalidMigrationStatus(string $migrationStatus): void
+    public function testCancelMigratorOnInvalidMigrationStatus(MigrationStatus $migrationStatus): void
     {
         [$handler, $migrator] = $this->createHandlerWithEntities($migrationStatus);
 
         $message = new RunMigrator($migrator);
         $handler($message);
 
-        self::assertSame(MigratorEntity::STATUS_CANCELED, $migrator->getStatus());
+        self::assertSame(ComponentStatus::CANCELED, $migrator->getStatus());
     }
 
     /**
-     * @return string[][]
+     * @return MigrationStatus[][]
      */
     public function provideCancellingMigrationStatuses(): array
     {
         return [
-            [MigrationEntity::STATUS_CANCELED],
-            [MigrationEntity::STATUS_FAILURE],
+            [MigrationStatus::CANCELED],
+            [MigrationStatus::FAILURE],
         ];
     }
 
@@ -202,7 +204,7 @@ class RunMigratorHandlerTest extends AbstractMessengerTestCase
      * Invalid migration status must trigger an error
      * @dataProvider provideInvalidMigrationStatuses
      */
-    public function testFailOnInvalidMigrationStatus(string $migrationStatus): void
+    public function testFailOnInvalidMigrationStatus(MigrationStatus $migrationStatus): void
     {
         [$handler, $migrator] = $this->createHandlerWithEntities($migrationStatus);
 
@@ -214,14 +216,14 @@ class RunMigratorHandlerTest extends AbstractMessengerTestCase
     }
 
     /**
-     * @return string[][]
+     * @return MigrationStatus[][]
      */
     public function provideInvalidMigrationStatuses(): array
     {
         return [
-            [MigrationEntity::STATUS_CORE_AFTER_TASKS],
-            [MigrationEntity::STATUS_AFTER_TASKS],
-            [MigrationEntity::STATUS_FINISHED],
+            [MigrationStatus::CORE_AFTER_TASKS],
+            [MigrationStatus::AFTER_TASKS],
+            [MigrationStatus::FINISHED],
         ];
     }
 
@@ -230,15 +232,15 @@ class RunMigratorHandlerTest extends AbstractMessengerTestCase
      */
     public function testMigratorWaitsForBeforeTasks(): void
     {
-        [$handler, $migrator, $migration] = $this->createHandlerWithEntities(MigrationEntity::STATUS_BEFORE_TASKS);
+        [$handler, $migrator, $migration] = $this->createHandlerWithEntities(MigrationStatus::BEFORE_TASKS);
 
         // Create a before task
-        $this->createTaskEntity($migration, TaskEntity::TASK_BEFORE, TaskEntity::STATUS_RUNNING);
+        $this->createTaskEntity($migration, TaskType::BEFORE, ComponentStatus::RUNNING);
 
         $message = new RunMigrator($migrator);
         $handler($message);
 
-        self::assertSame(MigrationEntity::STATUS_BEFORE_TASKS, $migration->getStatus());
+        self::assertSame(MigrationStatus::BEFORE_TASKS, $migration->getStatus());
         self::assertArrayHasKey('notice', $this->logger->entries);
         self::assertCount(1, $this->logger->entries['notice']);
         self::assertMatchesRegularExpression(
@@ -252,7 +254,7 @@ class RunMigratorHandlerTest extends AbstractMessengerTestCase
      */
     public function testDependentMigratorWaitsForPreviousMigrators(): void
     {
-        [$handler, $migrator, $migration] = $this->createHandlerWithEntities(MigrationEntity::STATUS_MIGRATORS);
+        [$handler, $migrator, $migration] = $this->createHandlerWithEntities(MigrationStatus::MIGRATORS);
 
         // Create a previous migrator
         $migrator->addPreviousMigrator($this->createMigratorEntity($migration));
@@ -260,7 +262,7 @@ class RunMigratorHandlerTest extends AbstractMessengerTestCase
         $message = new RunMigrator($migrator);
         $handler($message);
 
-        self::assertSame(MigrationEntity::STATUS_MIGRATORS, $migration->getStatus());
+        self::assertSame(MigrationStatus::MIGRATORS, $migration->getStatus());
         self::assertArrayHasKey('notice', $this->logger->entries);
         self::assertCount(1, $this->logger->entries['notice']);
         self::assertMatchesRegularExpression(
@@ -278,16 +280,16 @@ class RunMigratorHandlerTest extends AbstractMessengerTestCase
             'migrator_service' => fn() => self::createMock(MigratorInterface::class),
         ];
 
-        [$handler, $migrator, $migration] = $this->createHandlerWithEntities(MigrationEntity::STATUS_BEFORE_TASKS);
+        [$handler, $migrator, $migration] = $this->createHandlerWithEntities(MigrationStatus::BEFORE_TASKS);
 
         // Create tasks
-        $this->createTaskEntity($migration, TaskEntity::TASK_BEFORE, TaskEntity::STATUS_FINISHED);
-        $this->createTaskEntity($migration, TaskEntity::TASK_AFTER);
+        $this->createTaskEntity($migration, TaskType::BEFORE, ComponentStatus::FINISHED);
+        $this->createTaskEntity($migration, TaskType::AFTER);
 
         $message = new RunMigrator($migrator);
         $handler($message);
 
-        self::assertSame(MigrationEntity::STATUS_MIGRATORS, $migration->getStatus());
+        self::assertSame(MigrationStatus::MIGRATORS, $migration->getStatus());
         self::assertArrayHasKey('info', $this->logger->entries);
         self::assertCount(1, $this->logger->entries['info']);
         self::assertMatchesRegularExpression(
@@ -307,7 +309,7 @@ class RunMigratorHandlerTest extends AbstractMessengerTestCase
             return $migrator;
         };
 
-        [$handler, $migrator, $migration] = $this->createHandlerWithEntities(MigrationEntity::STATUS_BEFORE_TASKS);
+        [$handler, $migrator, $migration] = $this->createHandlerWithEntities(MigrationStatus::BEFORE_TASKS);
 
         try {
             $message = new RunMigrator($migrator);
@@ -318,8 +320,8 @@ class RunMigratorHandlerTest extends AbstractMessengerTestCase
             self::assertSame('Migrator failed.', $e->getMessage());
         }
 
-        self::assertSame(MigratorEntity::STATUS_FAILURE, $migrator->getStatus());
-        self::assertSame(MigrationEntity::STATUS_FAILURE, $migration->getStatus());
+        self::assertSame(ComponentStatus::FAILURE, $migrator->getStatus());
+        self::assertSame(MigrationStatus::FAILURE, $migration->getStatus());
     }
 
     /**
@@ -341,11 +343,11 @@ class RunMigratorHandlerTest extends AbstractMessengerTestCase
 
         $this->servicesForLocator['migrator_service'] = fn() => $migratorService;
 
-        [$handler, $migrator] = $this->createHandlerWithEntities(MigrationEntity::STATUS_MIGRATORS);
+        [$handler, $migrator] = $this->createHandlerWithEntities(MigrationStatus::MIGRATORS);
         $message = new RunMigrator($migrator);
         $handler($message);
 
-        self::assertSame(MigratorEntity::STATUS_FINISHED, $migrator->getStatus());
+        self::assertSame(ComponentStatus::FINISHED, $migrator->getStatus());
     }
 
     /**
@@ -355,7 +357,7 @@ class RunMigratorHandlerTest extends AbstractMessengerTestCase
     {
         $this->servicesForLocator['migrator_service'] = fn() => self::createMock(MigratorInterface::class);
 
-        [$handler, $migrator, $migration] = $this->createHandlerWithEntities(MigrationEntity::STATUS_MIGRATORS);
+        [$handler, $migrator, $migration] = $this->createHandlerWithEntities(MigrationStatus::MIGRATORS);
 
         // Add next migrator
         $migrator->addNextMigrator($this->createMigratorEntity($migration));
@@ -363,7 +365,7 @@ class RunMigratorHandlerTest extends AbstractMessengerTestCase
         $message = new RunMigrator($migrator);
         $handler($message);
 
-        self::assertSame(MigratorEntity::STATUS_FINISHED, $migrator->getStatus());
+        self::assertSame(ComponentStatus::FINISHED, $migrator->getStatus());
         self::assertCount(1, $this->getMessengerTransport()->get());
     }
 
@@ -374,16 +376,16 @@ class RunMigratorHandlerTest extends AbstractMessengerTestCase
     {
         $this->servicesForLocator['migrator_service'] = fn() => self::createMock(MigratorInterface::class);
 
-        [$handler, $migrator, $migration] = $this->createHandlerWithEntities(MigrationEntity::STATUS_MIGRATORS);
+        [$handler, $migrator, $migration] = $this->createHandlerWithEntities(MigrationStatus::MIGRATORS);
 
         // Add migrator & task
         $this->createMigratorEntity($migration);
-        $this->createTaskEntity($migration, TaskEntity::TASK_AFTER);
+        $this->createTaskEntity($migration, TaskType::AFTER);
 
         $message = new RunMigrator($migrator);
         $handler($message);
 
-        self::assertSame(MigratorEntity::STATUS_FINISHED, $migrator->getStatus());
+        self::assertSame(ComponentStatus::FINISHED, $migrator->getStatus());
         self::assertCount(0, $this->getMessengerTransport()->get());
     }
 
@@ -394,16 +396,16 @@ class RunMigratorHandlerTest extends AbstractMessengerTestCase
     {
         $this->servicesForLocator['migrator_service'] = fn() => self::createMock(MigratorInterface::class);
 
-        [$handler, $migrator, $migration] = $this->createHandlerWithEntities(MigrationEntity::STATUS_MIGRATORS);
+        [$handler, $migrator, $migration] = $this->createHandlerWithEntities(MigrationStatus::MIGRATORS);
 
         // Add task
-        $this->createTaskEntity($migration, TaskEntity::TASK_AFTER);
+        $this->createTaskEntity($migration, TaskType::AFTER);
 
         $message = new RunMigrator($migrator);
         $handler($message);
 
-        self::assertSame(MigratorEntity::STATUS_FINISHED, $migrator->getStatus());
-        self::assertSame(MigrationEntity::STATUS_MIGRATORS, $migration->getStatus());
+        self::assertSame(ComponentStatus::FINISHED, $migrator->getStatus());
+        self::assertSame(MigrationStatus::MIGRATORS, $migration->getStatus());
         self::assertCount(1, $this->getMessengerTransport()->get());
     }
 
@@ -414,12 +416,12 @@ class RunMigratorHandlerTest extends AbstractMessengerTestCase
     {
         $this->servicesForLocator['migrator_service'] = fn() => self::createMock(MigratorInterface::class);
 
-        [$handler, $migrator, $migration] = $this->createHandlerWithEntities(MigrationEntity::STATUS_MIGRATORS);
+        [$handler, $migrator, $migration] = $this->createHandlerWithEntities(MigrationStatus::MIGRATORS);
 
         $message = new RunMigrator($migrator);
         $handler($message);
 
-        self::assertSame(MigratorEntity::STATUS_FINISHED, $migrator->getStatus());
-        self::assertSame(MigrationEntity::STATUS_FINISHED, $migration->getStatus());
+        self::assertSame(ComponentStatus::FINISHED, $migrator->getStatus());
+        self::assertSame(MigrationStatus::FINISHED, $migration->getStatus());
     }
 }

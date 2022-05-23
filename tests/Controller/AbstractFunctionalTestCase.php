@@ -4,6 +4,7 @@ namespace Tests\Fregata\FregataBundle\Controller;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Fregata\FregataBundle\Doctrine\Migration\MigrationEntity;
+use Fregata\FregataBundle\Doctrine\Migration\MigrationStatus;
 use Psr\Container\ContainerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -42,7 +43,7 @@ abstract class AbstractFunctionalTestCase extends WebTestCase
     }
 
     protected function createMigrationEntity(
-        string $status = MigrationEntity::STATUS_CREATED,
+        MigrationStatus $status = MigrationStatus::CREATED,
         string $serviceId = 'test_migration'
     ): MigrationEntity {
         $migration = (new MigrationEntity())

@@ -2,7 +2,9 @@
 
 namespace Tests\Fregata\FregataBundle\Messenger\Command\Migrator;
 
+use Fregata\FregataBundle\Doctrine\ComponentStatus;
 use Fregata\FregataBundle\Doctrine\Migration\MigrationEntity;
+use Fregata\FregataBundle\Doctrine\Migration\MigrationStatus;
 use Fregata\FregataBundle\Doctrine\Migrator\MigratorEntity;
 use Fregata\FregataBundle\Messenger\Command\Migrator\MigratorNotReadyException;
 use Tests\Fregata\FregataBundle\Messenger\AbstractMessengerTestCase;
@@ -30,12 +32,12 @@ class MigratorNotReadyExceptionTest extends AbstractMessengerTestCase
         // Migrator creation
         $migrator = (new MigratorEntity())
             ->setServiceId('migrator.id')
-            ->setStatus(MigratorEntity::STATUS_RUNNING);
+            ->setStatus(ComponentStatus::RUNNING);
 
         $migration = (new MigrationEntity())
             ->setServiceId('migration.id')
             ->addMigrator($migrator)
-            ->setStatus(MigrationEntity::STATUS_MIGRATORS);
+            ->setStatus(MigrationStatus::MIGRATORS);
 
         $this->getEntityManager()->persist($migration);
         $this->getEntityManager()->persist($migrator);
@@ -46,8 +48,8 @@ class MigratorNotReadyExceptionTest extends AbstractMessengerTestCase
         $message = $exception->getMessage();
 
         self::assertStringContainsString((string)$migrator->getId(), $message);
-        self::assertStringContainsString($migrator->getStatus(), $message);
+        self::assertStringContainsString($migrator->getStatus()->value, $message);
         self::assertInstanceOf(MigrationEntity::class, $migrator->getMigration());
-        self::assertStringContainsString($migrator->getMigration()->getStatus(), $message);
+        self::assertStringContainsString($migrator->getMigration()->getStatus()->value, $message);
     }
 }

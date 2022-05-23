@@ -8,6 +8,7 @@ use Fregata\Adapter\Doctrine\DBAL\ForeignKey\Task\ForeignKeyBeforeTask;
 use Fregata\FregataBundle\Doctrine\Migration\MigrationEntity;
 use Fregata\FregataBundle\Doctrine\Migrator\MigratorEntity;
 use Fregata\FregataBundle\Doctrine\Task\TaskEntity;
+use Fregata\FregataBundle\Doctrine\Task\TaskType;
 use Fregata\FregataBundle\Messenger\Command\Migrator\RunMigrator;
 use Fregata\FregataBundle\Messenger\Command\Task\RunTask;
 use Fregata\Migration\Migration;
@@ -25,10 +26,6 @@ use Symfony\Component\String\UnicodeString;
  */
 class StartMigrationHandler implements MessageHandlerInterface
 {
-    private MigrationRegistry $migrationRegistry;
-    private EntityManagerInterface $entityManager;
-    private MessageBusInterface $messageBus;
-
     /** @var MigrationEntity current configured migration */
     private MigrationEntity $migrationEntity;
 
@@ -42,13 +39,10 @@ class StartMigrationHandler implements MessageHandlerInterface
     private array $serviceMap = [];
 
     public function __construct(
-        MigrationRegistry $migrationRegistry,
-        EntityManagerInterface $entityManager,
-        MessageBusInterface $messageBus
+        private readonly MigrationRegistry $migrationRegistry,
+        private readonly EntityManagerInterface $entityManager,
+        private readonly MessageBusInterface $messageBus,
     ) {
-        $this->migrationRegistry = $migrationRegistry;
-        $this->entityManager = $entityManager;
-        $this->messageBus = $messageBus;
     }
 
     public function __invoke(StartMigration $startMigration): void
@@ -67,7 +61,7 @@ class StartMigrationHandler implements MessageHandlerInterface
 
         // Create Before Task entities
         foreach ($migration->getBeforeTasks() as $beforeTask) {
-            $this->createTaskEntity($beforeTask, TaskEntity::TASK_BEFORE);
+            $this->createTaskEntity($beforeTask, TaskType::BEFORE);
         }
 
         // Create Migrators entities
@@ -77,7 +71,7 @@ class StartMigrationHandler implements MessageHandlerInterface
 
         // Create After Task entities
         foreach ($migration->getAfterTasks() as $afterTask) {
-            $this->createTaskEntity($afterTask, TaskEntity::TASK_AFTER);
+            $this->createTaskEntity($afterTask, TaskType::AFTER);
         }
 
         $this->entityManager->flush();
@@ -117,13 +111,13 @@ class StartMigrationHandler implements MessageHandlerInterface
     /**
      * Create a task entity based on task service and type
      */
-    private function createTaskEntity(TaskInterface $task, string $type): void
+    private function createTaskEntity(TaskInterface $task, TaskType $type): void
     {
         // Service ID
         $taskServiceId = sprintf(
             '%s.task.%s.%s',
             $this->servicePrefix,
-            mb_strtolower($type),
+            mb_strtolower($type->value),
             $this->getServiceId($task)
         );
 

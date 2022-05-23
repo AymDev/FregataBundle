@@ -2,8 +2,11 @@
 
 namespace Tests\Fregata\FregataBundle\Messenger\Command\Task;
 
+use Fregata\FregataBundle\Doctrine\ComponentStatus;
 use Fregata\FregataBundle\Doctrine\Migration\MigrationEntity;
+use Fregata\FregataBundle\Doctrine\Migration\MigrationStatus;
 use Fregata\FregataBundle\Doctrine\Task\TaskEntity;
+use Fregata\FregataBundle\Doctrine\Task\TaskType;
 use Fregata\FregataBundle\Messenger\Command\Task\TaskNotReadyException;
 use Tests\Fregata\FregataBundle\Messenger\AbstractMessengerTestCase;
 
@@ -30,13 +33,13 @@ class TaskNotReadyExceptionTest extends AbstractMessengerTestCase
         // Task creation
         $task = (new TaskEntity())
             ->setServiceId('task.id')
-            ->setType(TaskEntity::TASK_BEFORE)
-            ->setStatus(MigrationEntity::STATUS_MIGRATORS);
+            ->setType(TaskType::BEFORE)
+            ->setStatus(ComponentStatus::CREATED);
 
         $migration = (new MigrationEntity())
             ->setServiceId('migration.id')
             ->addTask($task)
-            ->setStatus(TaskEntity::STATUS_CREATED);
+            ->setStatus(MigrationStatus::MIGRATORS);
 
         $this->getEntityManager()->persist($migration);
         $this->getEntityManager()->persist($task);
@@ -47,8 +50,8 @@ class TaskNotReadyExceptionTest extends AbstractMessengerTestCase
         $message = $exception->getMessage();
 
         self::assertStringContainsString((string)$task->getId(), $message);
-        self::assertStringContainsString($task->getStatus(), $message);
+        self::assertStringContainsString($task->getStatus()->value, $message);
         self::assertInstanceOf(MigrationEntity::class, $task->getMigration());
-        self::assertStringContainsString($task->getMigration()->getStatus(), $message);
+        self::assertStringContainsString($task->getMigration()->getStatus()->value, $message);
     }
 }

@@ -8,6 +8,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Fregata\FregataBundle\Doctrine\FregataComponentInterface;
 use Fregata\FregataBundle\Doctrine\Migrator\MigratorEntity;
 use Fregata\FregataBundle\Doctrine\Task\TaskEntity;
+use Fregata\FregataBundle\Doctrine\Task\TaskType;
 
 /**
  * @internal
@@ -16,16 +17,6 @@ use Fregata\FregataBundle\Doctrine\Task\TaskEntity;
 #[ORM\Table(name: 'fregata_migration')]
 class MigrationEntity implements FregataComponentInterface
 {
-    public const STATUS_CREATED           = 'CREATED';
-    public const STATUS_BEFORE_TASKS      = 'BEFORE_TASKS';
-    public const STATUS_CORE_BEFORE_TASKS = 'CORE_BEFORE_TASKS';
-    public const STATUS_MIGRATORS         = 'MIGRATORS';
-    public const STATUS_CORE_AFTER_TASKS  = 'CORE_AFTER_TASKS';
-    public const STATUS_AFTER_TASKS       = 'AFTER_TASKS';
-    public const STATUS_FINISHED          = 'FINISHED';
-    public const STATUS_FAILURE           = 'FAILURE';
-    public const STATUS_CANCELED          = 'CANCELED';
-
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
@@ -37,8 +28,8 @@ class MigrationEntity implements FregataComponentInterface
     #[ORM\Column(type: 'datetime', nullable: true)]
     private ?\DateTime $finishedAt = null;
 
-    #[ORM\Column(type: 'string', length: 50)]
-    private string $status = self::STATUS_CREATED;
+    #[ORM\Column(type: 'string', enumType: MigrationStatus::class)]
+    private MigrationStatus $status = MigrationStatus::CREATED;
 
     #[ORM\Column(type: 'text')]
     private ?string $serviceId = null;
@@ -88,12 +79,12 @@ class MigrationEntity implements FregataComponentInterface
         return $this;
     }
 
-    public function getStatus(): string
+    public function getStatus(): MigrationStatus
     {
         return $this->status;
     }
 
-    public function setStatus(string $status): self
+    public function setStatus(MigrationStatus $status): self
     {
         $this->status = $status;
         return $this;
@@ -104,9 +95,9 @@ class MigrationEntity implements FregataComponentInterface
         return in_array(
             $this->getStatus(),
             [
-                self::STATUS_FINISHED,
-                self::STATUS_FAILURE,
-                self::STATUS_CANCELED,
+                MigrationStatus::FINISHED,
+                MigrationStatus::FAILURE,
+                MigrationStatus::CANCELED,
             ],
             true
         );
@@ -136,7 +127,7 @@ class MigrationEntity implements FregataComponentInterface
      */
     public function getBeforeTasks()
     {
-        return $this->tasks->filter(fn(TaskEntity $task) => $task->getType() === TaskEntity::TASK_BEFORE);
+        return $this->tasks->filter(fn(TaskEntity $task) => $task->getType() === TaskType::BEFORE);
     }
 
     /**
@@ -152,7 +143,7 @@ class MigrationEntity implements FregataComponentInterface
      */
     public function getAfterTasks()
     {
-        return $this->tasks->filter(fn(TaskEntity $task) => $task->getType() === TaskEntity::TASK_AFTER);
+        return $this->tasks->filter(fn(TaskEntity $task) => $task->getType() === TaskType::AFTER);
     }
 
     /**

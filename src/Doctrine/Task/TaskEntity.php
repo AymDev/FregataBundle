@@ -3,6 +3,7 @@
 namespace Fregata\FregataBundle\Doctrine\Task;
 
 use Doctrine\ORM\Mapping as ORM;
+use Fregata\FregataBundle\Doctrine\ComponentStatus;
 use Fregata\FregataBundle\Doctrine\FregataComponentInterface;
 use Fregata\FregataBundle\Doctrine\Migration\MigrationEntity;
 
@@ -13,15 +14,6 @@ use Fregata\FregataBundle\Doctrine\Migration\MigrationEntity;
 #[ORM\Table(name: 'fregata_task')]
 class TaskEntity implements FregataComponentInterface
 {
-    public const TASK_BEFORE = 'BEFORE';
-    public const TASK_AFTER  = 'AFTER';
-
-    public const STATUS_CREATED  = 'CREATED';
-    public const STATUS_RUNNING  = 'RUNNING';
-    public const STATUS_FINISHED = 'FINISHED';
-    public const STATUS_FAILURE  = 'FAILURE';
-    public const STATUS_CANCELED = 'CANCELED';
-
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
@@ -33,11 +25,11 @@ class TaskEntity implements FregataComponentInterface
     #[ORM\Column(type: 'datetime', nullable: true)]
     private ?\DateTime $finishedAt = null;
 
-    #[ORM\Column(type: 'string', length: 50)]
-    private ?string $type = null;
+    #[ORM\Column(type: 'string', enumType: TaskType::class)]
+    private ?TaskType $type = null;
 
-    #[ORM\Column(type: 'string', length: 50)]
-    private string $status = self::STATUS_CREATED;
+    #[ORM\Column(type: 'string', enumType: ComponentStatus::class)]
+    private ComponentStatus $status = ComponentStatus::CREATED;
 
     #[ORM\Column(type: 'text')]
     private ?string $serviceId = null;
@@ -77,23 +69,23 @@ class TaskEntity implements FregataComponentInterface
         return $this;
     }
 
-    public function getType(): ?string
+    public function getType(): ?TaskType
     {
         return $this->type;
     }
 
-    public function setType(string $type): self
+    public function setType(TaskType $type): self
     {
         $this->type = $type;
         return $this;
     }
 
-    public function getStatus(): string
+    public function getStatus(): ComponentStatus
     {
         return $this->status;
     }
 
-    public function setStatus(string $status): self
+    public function setStatus(ComponentStatus $status): self
     {
         $this->status = $status;
         return $this;
@@ -104,9 +96,9 @@ class TaskEntity implements FregataComponentInterface
         return in_array(
             $this->getStatus(),
             [
-                self::STATUS_FINISHED,
-                self::STATUS_FAILURE,
-                self::STATUS_CANCELED,
+                ComponentStatus::FINISHED,
+                ComponentStatus::FAILURE,
+                ComponentStatus::CANCELED,
             ],
             true
         );

@@ -2,8 +2,8 @@
 
 namespace Tests\Fregata\FregataBundle\Controller;
 
-use Fregata\FregataBundle\Doctrine\Migration\MigrationEntity;
 use Fregata\FregataBundle\Doctrine\Migration\MigrationRepository;
+use Fregata\FregataBundle\Doctrine\Migration\MigrationStatus;
 
 class MigrationControllerTest extends AbstractFunctionalTestCase
 {
@@ -34,7 +34,7 @@ class MigrationControllerTest extends AbstractFunctionalTestCase
      */
     public function testArchivedMigration(): void
     {
-        $migration = $this->createMigrationEntity(MigrationEntity::STATUS_FINISHED, 'archived');
+        $migration = $this->createMigrationEntity(MigrationStatus::FINISHED, 'archived');
         $this->client->request('GET', '/fregata/migration/archived');
 
         self::assertResponseIsSuccessful();

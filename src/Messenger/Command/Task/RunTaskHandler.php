@@ -5,9 +5,12 @@ namespace Fregata\FregataBundle\Messenger\Command\Task;
 use Doctrine\ORM\EntityManagerInterface;
 use Fregata\Adapter\Doctrine\DBAL\ForeignKey\Task\ForeignKeyAfterTask;
 use Fregata\Adapter\Doctrine\DBAL\ForeignKey\Task\ForeignKeyBeforeTask;
+use Fregata\FregataBundle\Doctrine\ComponentStatus;
 use Fregata\FregataBundle\Doctrine\Migration\MigrationEntity;
+use Fregata\FregataBundle\Doctrine\Migration\MigrationStatus;
 use Fregata\FregataBundle\Doctrine\Task\TaskEntity;
 use Fregata\FregataBundle\Doctrine\Task\TaskRepository;
+use Fregata\FregataBundle\Doctrine\Task\TaskType;
 use Fregata\FregataBundle\Messenger\Command\Migrator\RunMigrator;
 use Fregata\Migration\TaskInterface;
 use Psr\Log\LoggerInterface;
@@ -21,27 +24,16 @@ use Symfony\Component\Messenger\MessageBusInterface;
  */
 class RunTaskHandler implements MessageHandlerInterface
 {
-    private ServiceLocator $serviceLocator;
-    private EntityManagerInterface $entityManager;
-    private TaskRepository $taskRepository;
-    private MessageBusInterface $messageBus;
-    private LoggerInterface $logger;
-
     private TaskEntity $taskEntity;
     private MigrationEntity $migrationEntity;
 
     public function __construct(
-        ServiceLocator $serviceLocator,
-        EntityManagerInterface $entityManager,
-        TaskRepository $taskRepository,
-        MessageBusInterface $messageBus,
-        LoggerInterface $logger
+        private readonly ServiceLocator $serviceLocator,
+        private readonly EntityManagerInterface $entityManager,
+        private readonly TaskRepository $taskRepository,
+        private readonly MessageBusInterface $messageBus,
+        private readonly LoggerInterface $logger,
     ) {
-        $this->serviceLocator = $serviceLocator;
-        $this->entityManager = $entityManager;
-        $this->taskRepository = $taskRepository;
-        $this->messageBus = $messageBus;
-        $this->logger = $logger;
     }
 
     public function __invoke(RunTask $runTask): void
@@ -63,7 +55,7 @@ class RunTaskHandler implements MessageHandlerInterface
         $this->migrationEntity = $this->taskEntity->getMigration();
 
         // Do not run task multiple times
-        if (TaskEntity::STATUS_CREATED !== $this->taskEntity->getStatus()) {
+        if (ComponentStatus::CREATED !== $this->taskEntity->getStatus()) {
             $this->logger->notice('Task already executed.', [
                 'task' => $this->taskEntity->getId(),
             ]);
@@ -71,22 +63,14 @@ class RunTaskHandler implements MessageHandlerInterface
         }
 
         // Canceled/failed migration
-        $cancelingStatuses = [MigrationEntity::STATUS_CANCELED, MigrationEntity::STATUS_FAILURE];
+        $cancelingStatuses = [MigrationStatus::CANCELED, MigrationStatus::FAILURE];
         if (in_array($this->migrationEntity->getStatus(), $cancelingStatuses, true)) {
-            $this->taskEntity->setStatus(TaskEntity::STATUS_CANCELED);
+            $this->taskEntity->setStatus(ComponentStatus::CANCELED);
             $this->entityManager->flush();
             $this->logger->notice('Canceled task.', [
                 'task' => $this->taskEntity->getId(),
             ]);
             return;
-        }
-
-        // Task type check
-        if (false === in_array($this->taskEntity->getType(), [TaskEntity::TASK_BEFORE, TaskEntity::TASK_AFTER], true)) {
-            $this->failure('Unknown task type.', [
-                'task' => $this->taskEntity->getId(),
-                'type' => $this->taskEntity->getType(),
-            ]);
         }
 
         // Update migration status
@@ -99,7 +83,7 @@ class RunTaskHandler implements MessageHandlerInterface
 
         // Update task status
         $this->taskEntity
-            ->setStatus(TaskEntity::STATUS_RUNNING)
+            ->setStatus(ComponentStatus::RUNNING)
             ->setStartedAt();
         $this->entityManager->flush();
 
@@ -116,7 +100,7 @@ class RunTaskHandler implements MessageHandlerInterface
 
         // Task succeeded
         $this->taskEntity
-            ->setStatus(TaskEntity::STATUS_FINISHED)
+            ->setStatus(ComponentStatus::FINISHED)
             ->setFinishedAt();
         $this->entityManager->flush();
 
@@ -137,13 +121,13 @@ class RunTaskHandler implements MessageHandlerInterface
         // Set task and migration in the failure status
         if (isset($this->taskEntity)) {
             $this->taskEntity
-                ->setStatus(TaskEntity::STATUS_FAILURE)
+                ->setStatus(ComponentStatus::FAILURE)
                 ->setFinishedAt();
         }
 
         if (isset($this->migrationEntity)) {
             $this->migrationEntity
-                ->setStatus(MigrationEntity::STATUS_FAILURE)
+                ->setStatus(MigrationStatus::FAILURE)
                 ->setFinishedAt();
         }
 
@@ -195,23 +179,26 @@ class RunTaskHandler implements MessageHandlerInterface
     private function checkMigrationStatus(): void
     {
         // Behaviour is a bit different for before/after tasks
-        $isBefore = TaskEntity::TASK_BEFORE === $this->taskEntity->getType();
+        $isBefore = TaskType::BEFORE === $this->taskEntity->getType();
 
         $validMigrationStatuses = [
-            TaskEntity::TASK_BEFORE => [
-                MigrationEntity::STATUS_CREATED,
-                MigrationEntity::STATUS_BEFORE_TASKS,
-                MigrationEntity::STATUS_CORE_BEFORE_TASKS
+            TaskType::BEFORE->value => [
+                MigrationStatus::CREATED,
+                MigrationStatus::BEFORE_TASKS,
+                MigrationStatus::CORE_BEFORE_TASKS
             ],
-            TaskEntity::TASK_AFTER => [
-                MigrationEntity::STATUS_MIGRATORS,
-                MigrationEntity::STATUS_CORE_AFTER_TASKS,
-                MigrationEntity::STATUS_AFTER_TASKS
+            TaskType::AFTER->value => [
+                MigrationStatus::MIGRATORS,
+                MigrationStatus::CORE_AFTER_TASKS,
+                MigrationStatus::AFTER_TASKS
             ],
         ];
 
+        /** @var TaskType $taskType */
+        $taskType = $this->taskEntity->getType();
+        $validStatuses = $validMigrationStatuses[$taskType->value];
+
         // Invalid migration status
-        $validStatuses = $validMigrationStatuses[$this->taskEntity->getType()];
         if (false === in_array($this->migrationEntity->getStatus(), $validStatuses, true)) {
             $this->failure('Migration in invalid state to run task.', [
                 'migration'        => $this->migrationEntity->getId(),
@@ -243,8 +230,8 @@ class RunTaskHandler implements MessageHandlerInterface
 
             $this->updateMigrationStatus(
                 $isBefore
-                ? MigrationEntity::STATUS_CORE_BEFORE_TASKS
-                : MigrationEntity::STATUS_AFTER_TASKS
+                ? MigrationStatus::CORE_BEFORE_TASKS
+                : MigrationStatus::AFTER_TASKS
             );
             return;
         }
@@ -252,22 +239,22 @@ class RunTaskHandler implements MessageHandlerInterface
         // The task does not have to wait
         $this->updateMigrationStatus(
             $isBefore
-                ? MigrationEntity::STATUS_BEFORE_TASKS
-                : MigrationEntity::STATUS_CORE_AFTER_TASKS
+                ? MigrationStatus::BEFORE_TASKS
+                : MigrationStatus::CORE_AFTER_TASKS
         );
     }
 
     /**
      * Update the migration status if needed
      */
-    private function updateMigrationStatus(string $status): void
+    private function updateMigrationStatus(MigrationStatus $status): void
     {
         if ($status !== $this->migrationEntity->getStatus()) {
             // Set start time if not set already
             $this->migrationEntity->setStartedAt();
 
             $this->migrationEntity->setStatus($status);
-            $this->logger->info(sprintf('Migration reached the %s status', $status), [
+            $this->logger->info(sprintf('Migration reached the %s status', $status->value), [
                 'migration' => $this->migrationEntity->getId(),
             ]);
         }
@@ -280,7 +267,7 @@ class RunTaskHandler implements MessageHandlerInterface
     private function dispatchNextMessages(): void
     {
         // Behaviour is a bit different for before/after tasks
-        $isBefore = TaskEntity::TASK_BEFORE === $this->taskEntity->getType();
+        $isBefore = TaskType::BEFORE === $this->taskEntity->getType();
 
         /*
          * User before tasks may trigger core tasks
@@ -343,14 +330,14 @@ class RunTaskHandler implements MessageHandlerInterface
      */
     private function triggerNextStep(): void
     {
-        if (TaskEntity::TASK_BEFORE === $this->taskEntity->getType()) {
+        if (TaskType::BEFORE === $this->taskEntity->getType()) {
             // Dispatch migrator messages
             foreach ($this->migrationEntity->getMigrators() as $migratorEntity) {
                 $this->messageBus->dispatch(new RunMigrator($migratorEntity));
             }
         } else {
             // End of the migration
-            $this->updateMigrationStatus(MigrationEntity::STATUS_FINISHED);
+            $this->updateMigrationStatus(MigrationStatus::FINISHED);
             $this->migrationEntity->setFinishedAt();
             $this->entityManager->flush();
         }

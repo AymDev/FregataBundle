@@ -5,10 +5,13 @@ namespace Tests\Fregata\FregataBundle\Messenger\Command\Task;
 use Doctrine\ORM\EntityManagerInterface;
 use Fregata\Adapter\Doctrine\DBAL\ForeignKey\Task\ForeignKeyAfterTask;
 use Fregata\Adapter\Doctrine\DBAL\ForeignKey\Task\ForeignKeyBeforeTask;
+use Fregata\FregataBundle\Doctrine\ComponentStatus;
 use Fregata\FregataBundle\Doctrine\Migration\MigrationEntity;
+use Fregata\FregataBundle\Doctrine\Migration\MigrationStatus;
 use Fregata\FregataBundle\Doctrine\Migrator\MigratorEntity;
 use Fregata\FregataBundle\Doctrine\Task\TaskEntity;
 use Fregata\FregataBundle\Doctrine\Task\TaskRepository;
+use Fregata\FregataBundle\Doctrine\Task\TaskType;
 use Fregata\FregataBundle\Messenger\Command\Migrator\RunMigrator;
 use Fregata\FregataBundle\Messenger\Command\Task\RunTask;
 use Fregata\FregataBundle\Messenger\Command\Task\RunTaskHandler;
@@ -35,8 +38,8 @@ class RunTaskHandlerTest extends AbstractMessengerTestCase
 
     private function createTaskEntity(
         MigrationEntity $migration,
-        string $taskType,
-        string $taskStatus = TaskEntity::STATUS_CREATED,
+        TaskType $taskType,
+        ComponentStatus $taskStatus = ComponentStatus::CREATED,
         string $serviceId = 'task_service'
     ): TaskEntity {
         $task = (new TaskEntity())
@@ -70,9 +73,9 @@ class RunTaskHandlerTest extends AbstractMessengerTestCase
      * @return array{RunTaskHandler, TaskEntity, MigrationEntity}
      */
     private function createHandlerWithEntities(
-        string $migrationStatus,
-        string $taskType,
-        string $taskStatus = TaskEntity::STATUS_CREATED
+        MigrationStatus $migrationStatus,
+        TaskType $taskType,
+        ComponentStatus $taskStatus = ComponentStatus::CREATED
     ): array {
         $migration = (new MigrationEntity())
             ->setStatus($migrationStatus)
@@ -149,61 +152,47 @@ class RunTaskHandlerTest extends AbstractMessengerTestCase
         ];
 
         [$handler, $task] = $this->createHandlerWithEntities(
-            MigrationEntity::STATUS_MIGRATORS,
-            TaskEntity::TASK_BEFORE,
-            TaskEntity::STATUS_RUNNING
+            MigrationStatus::MIGRATORS,
+            TaskType::BEFORE,
+            ComponentStatus::RUNNING
         );
 
         $message = new RunTask((int)$task->getId());
         $handler($message);
 
-        self::assertSame(TaskEntity::STATUS_RUNNING, $task->getStatus());
+        self::assertSame(ComponentStatus::RUNNING, $task->getStatus());
     }
 
     /**
      * Task must be cancel on migration failure/cancellation
      * @dataProvider provideCancellingMigrationStatuses
      */
-    public function testCancelTaskOnInvalidMigrationStatus(string $migrationStatus): void
+    public function testCancelTaskOnInvalidMigrationStatus(MigrationStatus $migrationStatus): void
     {
-        [$handler, $task] = $this->createHandlerWithEntities($migrationStatus, TaskEntity::TASK_BEFORE);
+        [$handler, $task] = $this->createHandlerWithEntities($migrationStatus, TaskType::BEFORE);
 
         $message = new RunTask((int)$task->getId());
         $handler($message);
 
-        self::assertSame(TaskEntity::STATUS_CANCELED, $task->getStatus());
+        self::assertSame(ComponentStatus::CANCELED, $task->getStatus());
     }
 
     /**
-     * @return string[][]
+     * @return MigrationStatus[][]
      */
     public function provideCancellingMigrationStatuses(): array
     {
         return [
-            [MigrationEntity::STATUS_CANCELED],
-            [MigrationEntity::STATUS_FAILURE],
+            [MigrationStatus::CANCELED],
+            [MigrationStatus::FAILURE],
         ];
-    }
-
-    /**
-     * Unknown task type must trigger an error
-     */
-    public function testFailOnUnknownTaskType(): void
-    {
-        [$handler, $task] = $this->createHandlerWithEntities(MigrationEntity::STATUS_CREATED, 'invalid type');
-
-        self::expectException(\RuntimeException::class);
-        self::expectExceptionMessage('Unknown task type.');
-
-        $message = new RunTask((int)$task->getId());
-        $handler($message);
     }
 
     /**
      * Invalid task/migration types combination must trigger an error
      * @dataProvider provideInvalidMigrationStatuses
      */
-    public function testFailOnInvalidMigrationStatus(string $taskType, string $migrationStatus): void
+    public function testFailOnInvalidMigrationStatus(TaskType $taskType, MigrationStatus $migrationStatus): void
     {
         [$handler, $task] = $this->createHandlerWithEntities($migrationStatus, $taskType);
 
@@ -215,19 +204,19 @@ class RunTaskHandlerTest extends AbstractMessengerTestCase
     }
 
     /**
-     * @return string[][]
+     * @return array{TaskType, MigrationStatus}[]
      */
     public function provideInvalidMigrationStatuses(): array
     {
         return [
-            [TaskEntity::TASK_BEFORE, MigrationEntity::STATUS_MIGRATORS],
-            [TaskEntity::TASK_BEFORE, MigrationEntity::STATUS_CORE_AFTER_TASKS],
-            [TaskEntity::TASK_BEFORE, MigrationEntity::STATUS_AFTER_TASKS],
-            [TaskEntity::TASK_BEFORE, MigrationEntity::STATUS_FINISHED],
-            [TaskEntity::TASK_AFTER, MigrationEntity::STATUS_CREATED],
-            [TaskEntity::TASK_AFTER, MigrationEntity::STATUS_BEFORE_TASKS],
-            [TaskEntity::TASK_AFTER, MigrationEntity::STATUS_CORE_BEFORE_TASKS],
-            [TaskEntity::TASK_AFTER, MigrationEntity::STATUS_FINISHED],
+            [TaskType::BEFORE, MigrationStatus::MIGRATORS],
+            [TaskType::BEFORE, MigrationStatus::CORE_AFTER_TASKS],
+            [TaskType::BEFORE, MigrationStatus::AFTER_TASKS],
+            [TaskType::BEFORE, MigrationStatus::FINISHED],
+            [TaskType::AFTER, MigrationStatus::CREATED],
+            [TaskType::AFTER, MigrationStatus::BEFORE_TASKS],
+            [TaskType::AFTER, MigrationStatus::CORE_BEFORE_TASKS],
+            [TaskType::AFTER, MigrationStatus::FINISHED],
         ];
     }
 
@@ -242,17 +231,17 @@ class RunTaskHandlerTest extends AbstractMessengerTestCase
         ];
 
         [$handler, $task, $migration] = $this->createHandlerWithEntities(
-            MigrationEntity::STATUS_BEFORE_TASKS,
-            TaskEntity::TASK_BEFORE
+            MigrationStatus::BEFORE_TASKS,
+            TaskType::BEFORE
         );
 
         // Create a user defined before task
-        $this->createTaskEntity($migration, TaskEntity::TASK_BEFORE, TaskEntity::STATUS_CREATED, 'user_task');
+        $this->createTaskEntity($migration, TaskType::BEFORE, ComponentStatus::CREATED, 'user_task');
 
         $message = new RunTask((int)$task->getId());
         $handler($message);
 
-        self::assertSame(MigrationEntity::STATUS_BEFORE_TASKS, $migration->getStatus());
+        self::assertSame(MigrationStatus::BEFORE_TASKS, $migration->getStatus());
         self::assertArrayHasKey('notice', $this->logger->entries);
         self::assertCount(1, $this->logger->entries['notice']);
         self::assertMatchesRegularExpression(
@@ -272,17 +261,17 @@ class RunTaskHandlerTest extends AbstractMessengerTestCase
         ];
 
         [$handler, $task, $migration] = $this->createHandlerWithEntities(
-            MigrationEntity::STATUS_CORE_AFTER_TASKS,
-            TaskEntity::TASK_AFTER
+            MigrationStatus::CORE_AFTER_TASKS,
+            TaskType::AFTER
         );
 
         // Create a core after task
-        $this->createTaskEntity($migration, TaskEntity::TASK_AFTER, TaskEntity::STATUS_CREATED, 'core_task');
+        $this->createTaskEntity($migration, TaskType::AFTER, ComponentStatus::CREATED, 'core_task');
 
         $message = new RunTask((int)$task->getId());
         $handler($message);
 
-        self::assertSame(MigrationEntity::STATUS_CORE_AFTER_TASKS, $migration->getStatus());
+        self::assertSame(MigrationStatus::CORE_AFTER_TASKS, $migration->getStatus());
         self::assertArrayHasKey('notice', $this->logger->entries);
         self::assertCount(1, $this->logger->entries['notice']);
         self::assertMatchesRegularExpression(
@@ -302,17 +291,17 @@ class RunTaskHandlerTest extends AbstractMessengerTestCase
         ];
 
         [$handler, $task, $migration] = $this->createHandlerWithEntities(
-            MigrationEntity::STATUS_BEFORE_TASKS,
-            TaskEntity::TASK_BEFORE
+            MigrationStatus::BEFORE_TASKS,
+            TaskType::BEFORE
         );
 
         // Create a user defined before task
-        $this->createTaskEntity($migration, TaskEntity::TASK_BEFORE, TaskEntity::STATUS_FINISHED, 'user_task');
+        $this->createTaskEntity($migration, TaskType::BEFORE, ComponentStatus::FINISHED, 'user_task');
 
         $message = new RunTask((int)$task->getId());
         $handler($message);
 
-        self::assertSame(MigrationEntity::STATUS_CORE_BEFORE_TASKS, $migration->getStatus());
+        self::assertSame(MigrationStatus::CORE_BEFORE_TASKS, $migration->getStatus());
         self::assertArrayHasKey('info', $this->logger->entries);
         self::assertCount(1, $this->logger->entries['info']);
         self::assertMatchesRegularExpression(
@@ -334,19 +323,19 @@ class RunTaskHandlerTest extends AbstractMessengerTestCase
         ];
 
         [$handler, $task, $migration] = $this->createHandlerWithEntities(
-            MigrationEntity::STATUS_CORE_AFTER_TASKS,
-            TaskEntity::TASK_AFTER
+            MigrationStatus::CORE_AFTER_TASKS,
+            TaskType::AFTER
         );
 
         // Create a finished core task
-        $this->createTaskEntity($migration, TaskEntity::TASK_AFTER, TaskEntity::STATUS_FINISHED, 'core_task');
+        $this->createTaskEntity($migration, TaskType::AFTER, ComponentStatus::FINISHED, 'core_task');
         // Create a user defined after task
-        $this->createTaskEntity($migration, TaskEntity::TASK_AFTER, TaskEntity::STATUS_CREATED, 'user_task');
+        $this->createTaskEntity($migration, TaskType::AFTER, ComponentStatus::CREATED, 'user_task');
 
         $message = new RunTask((int)$task->getId());
         $handler($message);
 
-        self::assertSame(MigrationEntity::STATUS_AFTER_TASKS, $migration->getStatus());
+        self::assertEquals(MigrationStatus::AFTER_TASKS, $migration->getStatus());
         self::assertArrayHasKey('info', $this->logger->entries);
         self::assertCount(1, $this->logger->entries['info']);
         self::assertMatchesRegularExpression(
@@ -367,8 +356,8 @@ class RunTaskHandlerTest extends AbstractMessengerTestCase
         };
 
         [$handler, $task, $migration] = $this->createHandlerWithEntities(
-            MigrationEntity::STATUS_BEFORE_TASKS,
-            TaskEntity::TASK_BEFORE
+            MigrationStatus::BEFORE_TASKS,
+            TaskType::BEFORE
         );
 
         try {
@@ -380,8 +369,8 @@ class RunTaskHandlerTest extends AbstractMessengerTestCase
             self::assertSame('Task failed.', $e->getMessage());
         }
 
-        self::assertSame(TaskEntity::STATUS_FAILURE, $task->getStatus());
-        self::assertSame(MigrationEntity::STATUS_FAILURE, $migration->getStatus());
+        self::assertSame(ComponentStatus::FAILURE, $task->getStatus());
+        self::assertSame(MigrationStatus::FAILURE, $migration->getStatus());
     }
 
     /**
@@ -392,13 +381,13 @@ class RunTaskHandlerTest extends AbstractMessengerTestCase
         $this->servicesForLocator['task_service'] = fn() => self::createMock(TaskInterface::class);
 
         [$handler, $task] = $this->createHandlerWithEntities(
-            MigrationEntity::STATUS_BEFORE_TASKS,
-            TaskEntity::TASK_BEFORE
+            MigrationStatus::BEFORE_TASKS,
+            TaskType::BEFORE
         );
         $message = new RunTask((int)$task->getId());
         $handler($message);
 
-        self::assertSame(TaskEntity::STATUS_FINISHED, $task->getStatus());
+        self::assertSame(ComponentStatus::FINISHED, $task->getStatus());
     }
 
     /**
@@ -408,10 +397,10 @@ class RunTaskHandlerTest extends AbstractMessengerTestCase
      * @dataProvider provideNextTaskStepScenarios
      */
     public function testNextTaskNotDispatchedWhenRemainingTask(
-        string $taskType,
+        TaskType $taskType,
         string $currentTaskClass,
         string $nextTaskClass,
-        string $migrationStatus
+        MigrationStatus $migrationStatus
     ): void {
         $this->servicesForLocator = [
             'task_service' => fn() => self::createMock($currentTaskClass),
@@ -422,14 +411,14 @@ class RunTaskHandlerTest extends AbstractMessengerTestCase
         [$handler, $task, $migration] = $this->createHandlerWithEntities($migrationStatus, $taskType);
 
         // Create a task of the next step
-        $this->createTaskEntity($migration, $taskType, TaskEntity::STATUS_CREATED, 'next_step_task');
+        $this->createTaskEntity($migration, $taskType, ComponentStatus::CREATED, 'next_step_task');
         // Create a remaining task of the current step
-        $this->createTaskEntity($migration, $taskType, TaskEntity::STATUS_CREATED, 'remaining_task');
+        $this->createTaskEntity($migration, $taskType, ComponentStatus::CREATED, 'remaining_task');
 
         $message = new RunTask((int)$task->getId());
         $handler($message);
 
-        self::assertSame(TaskEntity::STATUS_FINISHED, $task->getStatus());
+        self::assertSame(ComponentStatus::FINISHED, $task->getStatus());
         self::assertCount(0, $this->getMessengerTransport()->get());
     }
 
@@ -440,10 +429,10 @@ class RunTaskHandlerTest extends AbstractMessengerTestCase
      * @dataProvider provideNextTaskStepScenarios
      */
     public function testNextTaskDispatchedWhenNoRemainingTask(
-        string $taskType,
+        TaskType $taskType,
         string $currentTaskClass,
         string $nextTaskClass,
-        string $migrationStatus
+        MigrationStatus $migrationStatus
     ): void {
         $this->servicesForLocator = [
             'task_service' => fn() => self::createMock($currentTaskClass),
@@ -455,12 +444,12 @@ class RunTaskHandlerTest extends AbstractMessengerTestCase
             $taskType
         );
 
-        $nextTask = $this->createTaskEntity($migration, $taskType, TaskEntity::STATUS_CREATED, 'next_step_task');
+        $nextTask = $this->createTaskEntity($migration, $taskType, ComponentStatus::CREATED, 'next_step_task');
 
         $message = new RunTask((int)$task->getId());
         $handler($message);
 
-        self::assertSame(TaskEntity::STATUS_FINISHED, $task->getStatus());
+        self::assertSame(ComponentStatus::FINISHED, $task->getStatus());
 
         /** @var Envelope[] $envelopes */
         $envelopes = $this->getMessengerTransport()->get();
@@ -472,22 +461,22 @@ class RunTaskHandlerTest extends AbstractMessengerTestCase
     }
 
     /**
-     * @return array{string, class-string<TaskInterface>, class-string<TaskInterface>, string}[]
+     * @return array{TaskType, class-string<TaskInterface>, class-string<TaskInterface>, MigrationStatus}[]
      */
     public function provideNextTaskStepScenarios(): array
     {
         return [
             [
-                TaskEntity::TASK_BEFORE,
+                TaskType::BEFORE,
                 TaskInterface::class,
                 ForeignKeyBeforeTask::class,
-                MigrationEntity::STATUS_BEFORE_TASKS
+                MigrationStatus::BEFORE_TASKS
             ],
             [
-                TaskEntity::TASK_AFTER,
+                TaskType::AFTER,
                 ForeignKeyAfterTask::class,
                 TaskInterface::class,
-                MigrationEntity::STATUS_CORE_AFTER_TASKS
+                MigrationStatus::CORE_AFTER_TASKS
             ],
         ];
     }
@@ -497,8 +486,10 @@ class RunTaskHandlerTest extends AbstractMessengerTestCase
      * @param class-string $taskClass
      * @dataProvider provideMigratorMessageDispatchingScenarios
      */
-    public function testMigratorNotDispatchedWhenRemainingBeforeTask(string $taskClass, string $migrationStatus): void
-    {
+    public function testMigratorNotDispatchedWhenRemainingBeforeTask(
+        string $taskClass,
+        MigrationStatus $migrationStatus
+    ): void {
         $this->servicesForLocator = [
             'task_service' => fn() => self::createMock($taskClass),
             'remaining_task' => fn() => self::createMock($taskClass),
@@ -506,18 +497,18 @@ class RunTaskHandlerTest extends AbstractMessengerTestCase
 
         [$handler, $task, $migration] = $this->createHandlerWithEntities(
             $migrationStatus,
-            TaskEntity::TASK_BEFORE
+            TaskType::BEFORE
         );
 
         // Create a remaining before task
-        $this->createTaskEntity($migration, TaskEntity::TASK_BEFORE, TaskEntity::STATUS_CREATED, 'remaining_task');
+        $this->createTaskEntity($migration, TaskType::BEFORE, ComponentStatus::CREATED, 'remaining_task');
         // Create a migrator
         $this->createMigratorEntity($migration);
 
         $message = new RunTask((int)$task->getId());
         $handler($message);
 
-        self::assertSame(TaskEntity::STATUS_FINISHED, $task->getStatus());
+        self::assertSame(ComponentStatus::FINISHED, $task->getStatus());
         self::assertCount(0, $this->getMessengerTransport()->get());
     }
 
@@ -526,15 +517,17 @@ class RunTaskHandlerTest extends AbstractMessengerTestCase
      * @param class-string $taskClass
      * @dataProvider provideMigratorMessageDispatchingScenarios
      */
-    public function testMigratorDispatchedWhenNoRemainingBeforeTask(string $taskClass, string $migrationStatus): void
-    {
+    public function testMigratorDispatchedWhenNoRemainingBeforeTask(
+        string $taskClass,
+        MigrationStatus $migrationStatus
+    ): void {
         $this->servicesForLocator = [
             'task_service' => fn() => self::createMock($taskClass),
         ];
 
         [$handler, $task, $migration] = $this->createHandlerWithEntities(
             $migrationStatus,
-            TaskEntity::TASK_BEFORE
+            TaskType::BEFORE
         );
 
         // Create a migrator
@@ -543,7 +536,7 @@ class RunTaskHandlerTest extends AbstractMessengerTestCase
         $message = new RunTask((int)$task->getId());
         $handler($message);
 
-        self::assertSame(TaskEntity::STATUS_FINISHED, $task->getStatus());
+        self::assertSame(ComponentStatus::FINISHED, $task->getStatus());
 
         /** @var Envelope[] $envelopes */
         $envelopes = $this->getMessengerTransport()->get();
@@ -554,13 +547,13 @@ class RunTaskHandlerTest extends AbstractMessengerTestCase
     }
 
     /**
-     * @return array{class-string<TaskInterface>, string}[]
+     * @return array{class-string<TaskInterface>, MigrationStatus}[]
      */
     public function provideMigratorMessageDispatchingScenarios(): array
     {
         return [
-            [TaskInterface::class, MigrationEntity::STATUS_BEFORE_TASKS],
-            [ForeignKeyBeforeTask::class, MigrationEntity::STATUS_CORE_BEFORE_TASKS],
+            [TaskInterface::class, MigrationStatus::BEFORE_TASKS],
+            [ForeignKeyBeforeTask::class, MigrationStatus::CORE_BEFORE_TASKS],
         ];
     }
 
@@ -569,8 +562,10 @@ class RunTaskHandlerTest extends AbstractMessengerTestCase
      * @param class-string $taskClass
      * @dataProvider provideFinishedMigrationScenarios
      */
-    public function testMigrationNotFinishedWhenRemainingAfterTask(string $taskClass, string $migrationStatus): void
-    {
+    public function testMigrationNotFinishedWhenRemainingAfterTask(
+        string $taskClass,
+        MigrationStatus $migrationStatus
+    ): void {
         $this->servicesForLocator = [
             'task_service' => fn() => self::createMock($taskClass),
             'remaining_task' => fn() => self::createMock($taskClass),
@@ -578,17 +573,17 @@ class RunTaskHandlerTest extends AbstractMessengerTestCase
 
         [$handler, $task, $migration] = $this->createHandlerWithEntities(
             $migrationStatus,
-            TaskEntity::TASK_AFTER
+            TaskType::AFTER
         );
 
         // Create a remaining task
-        $this->createTaskEntity($migration, TaskEntity::TASK_AFTER, TaskEntity::STATUS_CREATED, 'remaining_task');
+        $this->createTaskEntity($migration, TaskType::AFTER, ComponentStatus::CREATED, 'remaining_task');
 
         $message = new RunTask((int)$task->getId());
         $handler($message);
 
-        self::assertSame(TaskEntity::STATUS_FINISHED, $task->getStatus());
-        self::assertSame($migrationStatus, $migration->getStatus());
+        self::assertSame(ComponentStatus::FINISHED, $task->getStatus());
+        self::assertEquals($migrationStatus, $migration->getStatus());
     }
 
     /**
@@ -596,32 +591,34 @@ class RunTaskHandlerTest extends AbstractMessengerTestCase
      * @param class-string $taskClass
      * @dataProvider provideFinishedMigrationScenarios
      */
-    public function testMigrationFinishedWhenNoRemainingAfterTask(string $taskClass, string $migrationStatus): void
-    {
+    public function testMigrationFinishedWhenNoRemainingAfterTask(
+        string $taskClass,
+        MigrationStatus $migrationStatus
+    ): void {
         $this->servicesForLocator = [
             'task_service' => fn() => self::createMock($taskClass),
         ];
 
         [$handler, $task, $migration] = $this->createHandlerWithEntities(
             $migrationStatus,
-            TaskEntity::TASK_AFTER
+            TaskType::AFTER
         );
 
         $message = new RunTask((int)$task->getId());
         $handler($message);
 
-        self::assertSame(TaskEntity::STATUS_FINISHED, $task->getStatus());
-        self::assertSame(MigrationEntity::STATUS_FINISHED, $migration->getStatus());
+        self::assertSame(ComponentStatus::FINISHED, $task->getStatus());
+        self::assertSame(MigrationStatus::FINISHED, $migration->getStatus());
     }
 
     /**
-     * @return array{class-string<TaskInterface>, string}[]
+     * @return array{class-string<TaskInterface>, MigrationStatus}[]
      */
     public function provideFinishedMigrationScenarios(): array
     {
         return [
-            [TaskInterface::class, MigrationEntity::STATUS_AFTER_TASKS],
-            [ForeignKeyAfterTask::class, MigrationEntity::STATUS_CORE_AFTER_TASKS],
+            [TaskInterface::class, MigrationStatus::AFTER_TASKS],
+            [ForeignKeyAfterTask::class, MigrationStatus::CORE_AFTER_TASKS],
         ];
     }
 }

@@ -3,8 +3,8 @@
 namespace Fregata\FregataBundle\Controller;
 
 use Doctrine\ORM\EntityManagerInterface;
-use Fregata\FregataBundle\Doctrine\Migration\MigrationEntity;
 use Fregata\FregataBundle\Doctrine\Migration\MigrationRepository;
+use Fregata\FregataBundle\Doctrine\Migration\MigrationStatus;
 use Fregata\FregataBundle\Form\StartMigration\StartMigrationForm;
 use Fregata\FregataBundle\Messenger\Command\Migration\StartMigration;
 use Fregata\Migration\MigrationRegistry;
@@ -103,7 +103,7 @@ class RunController extends AbstractController
         if ($migration->hasEnded()) {
             $this->addFlash('warning', 'Cannot cancel migration as it already ended.');
         } else {
-            $migration->setStatus(MigrationEntity::STATUS_CANCELED);
+            $migration->setStatus(MigrationStatus::CANCELED);
             $entityManager->flush();
             $this->addFlash('success', 'Migration has been canceled.');
         }

@@ -4,9 +4,12 @@ namespace Tests\Fregata\FregataBundle\Messenger\Command\Migration;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Fregata\Adapter\Doctrine\DBAL\ForeignKey\Task\ForeignKeyBeforeTask;
+use Fregata\FregataBundle\Doctrine\ComponentStatus;
 use Fregata\FregataBundle\Doctrine\Migration\MigrationEntity;
+use Fregata\FregataBundle\Doctrine\Migration\MigrationStatus;
 use Fregata\FregataBundle\Doctrine\Migrator\MigratorEntity;
 use Fregata\FregataBundle\Doctrine\Task\TaskEntity;
+use Fregata\FregataBundle\Doctrine\Task\TaskType;
 use Fregata\FregataBundle\Messenger\Command\Migration\StartMigration;
 use Fregata\FregataBundle\Messenger\Command\Migration\StartMigrationHandler;
 use Fregata\FregataBundle\Messenger\Command\Migrator\RunMigrator;
@@ -76,7 +79,7 @@ class StartMigrationHandlerTest extends AbstractMessengerTestCase
         $migrationEntity = reset($entities[MigrationEntity::class]);
 
         self::assertSame('testing', $migrationEntity->getServiceId());
-        self::assertSame(MigrationEntity::STATUS_CREATED, $migrationEntity->getStatus());
+        self::assertSame(MigrationStatus::CREATED, $migrationEntity->getStatus());
         self::assertCount(1, $migrationEntity->getMigrators());
         self::assertCount(2, $migrationEntity->getTasks());
 
@@ -85,29 +88,29 @@ class StartMigrationHandlerTest extends AbstractMessengerTestCase
         $migratorEntity = $migrationEntity->getMigrators()->first();
         self::assertIsString($migratorEntity->getServiceId());
         self::assertStringStartsWith('fregata.migration.testing.migrator.', $migratorEntity->getServiceId());
-        self::assertSame(MigratorEntity::STATUS_CREATED, $migratorEntity->getStatus());
+        self::assertSame(ComponentStatus::CREATED, $migratorEntity->getStatus());
 
         // Before task entity assertions
         $beforeTaskEntities = $migrationEntity->getTasks()
-            ->filter(fn(TaskEntity $task) => $task->getType() === TaskEntity::TASK_BEFORE);
+            ->filter(fn(TaskEntity $task) => $task->getType() === TaskType::BEFORE);
         self::assertCount(1, $beforeTaskEntities);
 
         /** @var TaskEntity $beforeTaskEntity */
         $beforeTaskEntity = $beforeTaskEntities->first();
         self::assertIsString($beforeTaskEntity->getServiceId());
         self::assertStringStartsWith('fregata.migration.testing.task.before.', $beforeTaskEntity->getServiceId());
-        self::assertSame(TaskEntity::STATUS_CREATED, $beforeTaskEntity->getStatus());
+        self::assertSame(ComponentStatus::CREATED, $beforeTaskEntity->getStatus());
 
         // After task entity assertions
         $afterTaskEntities = $migrationEntity->getTasks()
-            ->filter(fn(TaskEntity $task) => $task->getType() === TaskEntity::TASK_AFTER);
+            ->filter(fn(TaskEntity $task) => $task->getType() === TaskType::AFTER);
         self::assertCount(1, $afterTaskEntities);
 
         /** @var TaskEntity $afterTaskEntity */
         $afterTaskEntity = $afterTaskEntities->first();
         self::assertIsString($afterTaskEntity->getServiceId());
         self::assertStringStartsWith('fregata.migration.testing.task.after.', $afterTaskEntity->getServiceId());
-        self::assertSame(TaskEntity::STATUS_CREATED, $afterTaskEntity->getStatus());
+        self::assertSame(ComponentStatus::CREATED, $afterTaskEntity->getStatus());
     }
 
     /**

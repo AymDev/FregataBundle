@@ -4,6 +4,7 @@ namespace Tests\Fregata\FregataBundle\Controller;
 
 use Fregata\FregataBundle\Doctrine\Migration\MigrationEntity;
 use Fregata\FregataBundle\Doctrine\Migration\MigrationRepository;
+use Fregata\FregataBundle\Doctrine\Migration\MigrationStatus;
 
 class RunControllerTest extends AbstractFunctionalTestCase
 {
@@ -29,7 +30,7 @@ class RunControllerTest extends AbstractFunctionalTestCase
     public function testRunHistory(): void
     {
         $this->createMigrationEntity();
-        $this->createMigrationEntity(MigrationEntity::STATUS_FINISHED, 'other_migration');
+        $this->createMigrationEntity(MigrationStatus::FINISHED, 'other_migration');
 
         $crawler = $this->client->request('GET', '/fregata/run/history');
 
@@ -73,14 +74,14 @@ class RunControllerTest extends AbstractFunctionalTestCase
         self::assertResponseStatusCodeSame(404);
 
         // Existing migration
-        $migration = $this->createMigrationEntity(MigrationEntity::STATUS_MIGRATORS);
+        $migration = $this->createMigrationEntity(MigrationStatus::MIGRATORS);
         $this->client->request('GET', sprintf('/fregata/run/%d', $migration->getId()));
         self::assertResponseIsSuccessful();
     }
 
     public function testCancelRun(): void
     {
-        $migration = $this->createMigrationEntity(MigrationEntity::STATUS_MIGRATORS);
+        $migration = $this->createMigrationEntity(MigrationStatus::MIGRATORS);
         $runUri = sprintf('/fregata/run/%d', $migration->getId());
 
         $this->client->request('GET', $runUri);
@@ -95,7 +96,7 @@ class RunControllerTest extends AbstractFunctionalTestCase
 
     public function testCannotCancelRunWithInvalidToken(): void
     {
-        $migration = $this->createMigrationEntity(MigrationEntity::STATUS_MIGRATORS);
+        $migration = $this->createMigrationEntity(MigrationStatus::MIGRATORS);
 
         $this->client->request('GET', sprintf('/fregata/run/%d/cancel/invalid', $migration->getId()));
         self::assertResponseRedirects(sprintf('/fregata/run/%d', $migration->getId()));
@@ -106,7 +107,7 @@ class RunControllerTest extends AbstractFunctionalTestCase
 
     public function testCannotCancelRunForUnknownMigration(): void
     {
-        $migration = $this->createMigrationEntity(MigrationEntity::STATUS_MIGRATORS);
+        $migration = $this->createMigrationEntity(MigrationStatus::MIGRATORS);
         $this->client->request('GET', sprintf('/fregata/run/%d', $migration->getId()));
         self::assertResponseIsSuccessful();
 
@@ -120,14 +121,14 @@ class RunControllerTest extends AbstractFunctionalTestCase
 
     public function testCannotCancelRunForEndedMigration(): void
     {
-        $migration = $this->createMigrationEntity(MigrationEntity::STATUS_MIGRATORS);
+        $migration = $this->createMigrationEntity(MigrationStatus::MIGRATORS);
         $runUri = sprintf('/fregata/run/%d', $migration->getId());
 
         $this->client->request('GET', $runUri);
         self::assertResponseIsSuccessful();
 
         // End the migration
-        $migration->setStatus(MigrationEntity::STATUS_FINISHED);
+        $migration->setStatus(MigrationStatus::FINISHED);
         $this->entityManager->flush();
 
         $this->client->clickLink('Cancel migration');

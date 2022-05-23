@@ -32,9 +32,9 @@ class MigrationRepository extends ServiceEntityRepository
         $runningMigrations = $this->createQueryBuilder('m')
             ->where('m.status NOT IN(:statuses)')
             ->setParameter('statuses', [
-                MigrationEntity::STATUS_CANCELED,
-                MigrationEntity::STATUS_FAILURE,
-                MigrationEntity::STATUS_FINISHED,
+                MigrationStatus::CANCELED,
+                MigrationStatus::FAILURE,
+                MigrationStatus::FINISHED,
             ])
             ->orderBy('m.startedAt', 'DESC')
             ->getQuery()

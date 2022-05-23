@@ -16,6 +16,11 @@
     <file>tests/</file>
     <exclude-pattern>tests/Fixtures/</exclude-pattern>
 
+    <!-- Scan the enum files when PHP_CodeSniffer 3.7 is released with enum syntax support -->
+    <exclude-pattern>src/Doctrine/Migration/MigrationStatus.php</exclude-pattern>
+    <exclude-pattern>src/Doctrine/Task/TaskType.php</exclude-pattern>
+    <exclude-pattern>src/Doctrine/ComponentStatus.php</exclude-pattern>
+
     <rule ref="PSR1.Classes.ClassDeclaration.MultipleClasses">
         <exclude-pattern>tests/*</exclude-pattern>
     </rule>

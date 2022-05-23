@@ -16,8 +16,8 @@ class TaskNotReadyException extends \Exception
             sprintf(
                 'Task %d in %s status is not ready as the migration is in %s state',
                 $taskEntity->getId(),
-                $taskEntity->getStatus(),
-                $taskEntity->getMigration()->getStatus()
+                $taskEntity->getStatus()->value,
+                $taskEntity->getMigration()->getStatus()->value
             ),
             1623880572586
         );

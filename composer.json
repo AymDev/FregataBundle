@@ -18,7 +18,7 @@
         "symfony/config": "^4.4||^5.0",
         "symfony/framework-bundle": "^4.4||^5.0",
         "doctrine/doctrine-bundle": "^2.4",
-        "doctrine/orm": "^2.9",
+        "doctrine/orm": "^2.11",
         "symfony/messenger": "^4.4||^5.0",
         "symfony/asset": "^4.4||^5.0",
         "symfony/form": "^4.4||^5.0",

@@ -2,7 +2,7 @@
 
 namespace Tests\Fregata\FregataBundle\Controller;
 
-use Fregata\FregataBundle\Doctrine\Migration\MigrationEntity;
+use Fregata\FregataBundle\Doctrine\Migration\MigrationStatus;
 
 class DashboardControllerTest extends AbstractFunctionalTestCase
 {
@@ -45,7 +45,7 @@ class DashboardControllerTest extends AbstractFunctionalTestCase
      */
     public function testDashboardDisplayLastMigration(): void
     {
-        $migration = $this->createMigrationEntity(MigrationEntity::STATUS_CANCELED);
+        $migration = $this->createMigrationEntity(MigrationStatus::CANCELED);
         $crawler = $this->client->request('GET', '/fregata/');
 
         self::assertResponseIsSuccessful();

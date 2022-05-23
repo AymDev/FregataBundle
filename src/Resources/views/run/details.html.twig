@@ -49,17 +49,17 @@
         <div class="js--tabs">
             <div class="tabs is-centered">
                 <ul>
-                    <li class="{{ migration.status in ['BEFORE_TASKS', 'CORE_BEFORE_TASKS'] ? 'is-active' : '' }}" data-tab-active="before">
+                    <li class="{{ migration.status.value in ['BEFORE_TASKS', 'CORE_BEFORE_TASKS'] ? 'is-active' : '' }}" data-tab-active="before">
                         <a data-tab-target="before">
                             Before Tasks
                         </a>
                     </li>
-                    <li class="{{ migration.status in ['BEFORE_TASKS', 'CORE_BEFORE_TASKS', 'CORE_AFTER_TASKS', 'AFTER_TASKS'] ? '' : 'is-active' }}" data-tab-active="migrator">
+                    <li class="{{ migration.status.value in ['BEFORE_TASKS', 'CORE_BEFORE_TASKS', 'CORE_AFTER_TASKS', 'AFTER_TASKS'] ? '' : 'is-active' }}" data-tab-active="migrator">
                         <a data-tab-target="migrator">
                             Migrators
                         </a>
                     </li>
-                    <li class="{{ migration.status in ['CORE_AFTER_TASKS', 'AFTER_TASKS'] ? 'is-active' : '' }}" data-tab-active="after">
+                    <li class="{{ migration.status.value in ['CORE_AFTER_TASKS', 'AFTER_TASKS'] ? 'is-active' : '' }}" data-tab-active="after">
                         <a data-tab-target="after">
                             After Tasks
                         </a>
@@ -67,12 +67,12 @@
                 </ul>
             </div>
 
-            <div class="{{ migration.status in ['BEFORE_TASKS', 'CORE_BEFORE_TASKS'] ? '' : 'is-hidden' }}" data-tab="before">
-                {% if migration.status is same as('CREATED') %}
+            <div class="{{ migration.status.value in ['BEFORE_TASKS', 'CORE_BEFORE_TASKS'] ? '' : 'is-hidden' }}" data-tab="before">
+                {% if migration.status.value is same as('CREATED') %}
                     <progress class="progress is-small is-dark"></progress>
-                {% elseif migration.status is same as('FAILURE') and migration.finishedBeforeTasks|length < migration.beforeTasks|length %}
+                {% elseif migration.status.value is same as('FAILURE') and migration.finishedBeforeTasks|length < migration.beforeTasks|length %}
                     <progress class="progress is-small is-danger" value="{{ migration.finishedBeforeTasks|length }}" max="{{ migration.beforeTasks|length }}"></progress>
-                {% elseif migration.status is same as('CANCELED') %}
+                {% elseif migration.status.value is same as('CANCELED') %}
                     <progress class="progress is-small is-danger" value="{{ migration.finishedBeforeTasks|length }}" max="{{ migration.beforeTasks|length }}"></progress>
                 {% else %}
                     <progress class="progress is-small is-success" value="{{ migration.finishedBeforeTasks|length }}" max="{{ migration.beforeTasks|length }}"></progress>
@@ -81,12 +81,12 @@
                 {{ _self.tasks_list(migration.beforeTasks) }}
             </div>
 
-            <div class="{{ migration.status in ['BEFORE_TASKS', 'CORE_BEFORE_TASKS', 'CORE_AFTER_TASKS', 'AFTER_TASKS'] ? 'is-hidden' : '' }}" data-tab="migrator">
-                {% if migration.status in ['CREATED', 'BEFORE_TASKS', 'CORE_BEFORE_TASKS'] %}
+            <div class="{{ migration.status.value in ['BEFORE_TASKS', 'CORE_BEFORE_TASKS', 'CORE_AFTER_TASKS', 'AFTER_TASKS'] ? 'is-hidden' : '' }}" data-tab="migrator">
+                {% if migration.status.value in ['CREATED', 'BEFORE_TASKS', 'CORE_BEFORE_TASKS'] %}
                     <progress class="progress is-small is-dark"></progress>
-                {% elseif migration.status is same as('FAILURE') and migration.finishedMigrators|length < migration.migrators|length %}
+                {% elseif migration.status.value is same as('FAILURE') and migration.finishedMigrators|length < migration.migrators|length %}
                     <progress class="progress is-small is-danger" value="{{ migration.finishedMigrators|length }}" max="{{ migration.migrators|length }}"></progress>
-                {% elseif migration.status is same as('CANCELED') %}
+                {% elseif migration.status.value is same as('CANCELED') %}
                     <progress class="progress is-small is-danger" value="{{ migration.finishedMigrators|length }}" max="{{ migration.migrators|length }}"></progress>
                 {% else %}
                     <progress class="progress is-small is-success" value="{{ migration.finishedMigrators|length }}" max="{{ migration.migrators|length }}"></progress>
@@ -115,12 +115,12 @@
                 </div>
             </div>
 
-            <div class="{{ migration.status in ['CORE_AFTER_TASKS', 'AFTER_TASKS'] ? '' : 'is-hidden' }}" data-tab="after">
-                {% if migration.status in ['CREATED', 'BEFORE_TASKS', 'CORE_BEFORE_TASKS', 'MIGRATORS'] %}
+            <div class="{{ migration.status.value in ['CORE_AFTER_TASKS', 'AFTER_TASKS'] ? '' : 'is-hidden' }}" data-tab="after">
+                {% if migration.status.value in ['CREATED', 'BEFORE_TASKS', 'CORE_BEFORE_TASKS', 'MIGRATORS'] %}
                     <progress class="progress is-small is-dark"></progress>
-                {% elseif migration.status is same as('FAILURE') and migration.finishedAfterTasks|length < migration.afterTasks|length %}
+                {% elseif migration.status.value is same as('FAILURE') and migration.finishedAfterTasks|length < migration.afterTasks|length %}
                     <progress class="progress is-small is-danger" value="{{ migration.finishedAfterTasks|length }}" max="{{ migration.afterTasks|length }}"></progress>
-                {% elseif migration.status is same as('CANCELED') %}
+                {% elseif migration.status.value is same as('CANCELED') %}
                     <progress class="progress is-small is-danger" value="{{ migration.finishedAfterTasks|length }}" max="{{ migration.afterTasks|length }}"></progress>
                 {% else %}
                     <progress class="progress is-small is-success" value="{{ migration.finishedAfterTasks|length }}" max="{{ migration.afterTasks|length }}"></progress>

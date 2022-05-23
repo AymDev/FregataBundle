@@ -3,7 +3,9 @@
 namespace Fregata\FregataBundle\Messenger\Command\Migrator;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Fregata\FregataBundle\Doctrine\ComponentStatus;
 use Fregata\FregataBundle\Doctrine\Migration\MigrationEntity;
+use Fregata\FregataBundle\Doctrine\Migration\MigrationStatus;
 use Fregata\FregataBundle\Doctrine\Migrator\MigratorEntity;
 use Fregata\FregataBundle\Doctrine\Migrator\MigratorRepository;
 use Fregata\FregataBundle\Doctrine\Task\TaskEntity;
@@ -20,27 +22,16 @@ use Symfony\Component\Messenger\MessageBusInterface;
  */
 class RunMigratorHandler implements MessageHandlerInterface
 {
-    private ServiceLocator $serviceLocator;
-    private EntityManagerInterface $entityManager;
-    private MigratorRepository $migratorRepository;
-    private MessageBusInterface $messageBus;
-    private LoggerInterface $logger;
-
     private MigratorEntity $migratorEntity;
     private MigrationEntity $migrationEntity;
 
     public function __construct(
-        ServiceLocator $serviceLocator,
-        EntityManagerInterface $entityManager,
-        MigratorRepository $migratorRepository,
-        MessageBusInterface $messageBus,
-        LoggerInterface $logger
+        private readonly ServiceLocator $serviceLocator,
+        private readonly EntityManagerInterface $entityManager,
+        private readonly MigratorRepository $migratorRepository,
+        private readonly MessageBusInterface $messageBus,
+        private readonly LoggerInterface $logger,
     ) {
-        $this->serviceLocator = $serviceLocator;
-        $this->entityManager = $entityManager;
-        $this->migratorRepository = $migratorRepository;
-        $this->messageBus = $messageBus;
-        $this->logger = $logger;
     }
 
     public function __invoke(RunMigrator $runMigrator): void
@@ -62,7 +53,7 @@ class RunMigratorHandler implements MessageHandlerInterface
         $this->migrationEntity = $this->migratorEntity->getMigration();
 
         // Do not run migrator multiple times
-        if (MigratorEntity::STATUS_CREATED !== $this->migratorEntity->getStatus()) {
+        if (ComponentStatus::CREATED !== $this->migratorEntity->getStatus()) {
             $this->logger->notice('Migrator already executed.', [
                 'migrator' => $this->migratorEntity->getId(),
             ]);
@@ -70,9 +61,9 @@ class RunMigratorHandler implements MessageHandlerInterface
         }
 
         // Canceled/failed migration
-        $cancelingStatuses = [MigrationEntity::STATUS_CANCELED, MigrationEntity::STATUS_FAILURE];
+        $cancelingStatuses = [MigrationStatus::CANCELED, MigrationStatus::FAILURE];
         if (in_array($this->migrationEntity->getStatus(), $cancelingStatuses, true)) {
-            $this->migratorEntity->setStatus(MigratorEntity::STATUS_CANCELED);
+            $this->migratorEntity->setStatus(ComponentStatus::CANCELED);
             $this->entityManager->flush();
             $this->logger->notice('Canceled migrator.', [
                 'migrator' => $this->migratorEntity->getId(),
@@ -90,7 +81,7 @@ class RunMigratorHandler implements MessageHandlerInterface
 
         // Update task status
         $this->migratorEntity
-            ->setStatus(MigratorEntity::STATUS_RUNNING)
+            ->setStatus(ComponentStatus::RUNNING)
             ->setStartedAt();
         $this->entityManager->flush();
 
@@ -113,7 +104,7 @@ class RunMigratorHandler implements MessageHandlerInterface
 
         // Migrator succeeded
         $this->migratorEntity
-            ->setStatus(MigratorEntity::STATUS_FINISHED)
+            ->setStatus(ComponentStatus::FINISHED)
             ->setFinishedAt();
         $this->entityManager->flush();
 
@@ -134,13 +125,13 @@ class RunMigratorHandler implements MessageHandlerInterface
         // Set task and migration in the failure status
         if (isset($this->migratorEntity)) {
             $this->migratorEntity
-                ->setStatus(MigratorEntity::STATUS_FAILURE)
+                ->setStatus(ComponentStatus::FAILURE)
                 ->setFinishedAt();
         }
 
         if (isset($this->migrationEntity)) {
             $this->migrationEntity
-                ->setStatus(MigrationEntity::STATUS_FAILURE)
+                ->setStatus(MigrationStatus::FAILURE)
                 ->setFinishedAt();
         }
 
@@ -181,10 +172,10 @@ class RunMigratorHandler implements MessageHandlerInterface
     private function checkMigrationStatus(): void
     {
         $validMigrationStatuses = [
-            MigrationEntity::STATUS_CREATED,
-            MigrationEntity::STATUS_BEFORE_TASKS,
-            MigrationEntity::STATUS_CORE_BEFORE_TASKS,
-            MigrationEntity::STATUS_MIGRATORS,
+            MigrationStatus::CREATED,
+            MigrationStatus::BEFORE_TASKS,
+            MigrationStatus::CORE_BEFORE_TASKS,
+            MigrationStatus::MIGRATORS,
         ];
 
         // Invalid migration status
@@ -198,7 +189,7 @@ class RunMigratorHandler implements MessageHandlerInterface
         }
 
         // Migrators must wait for before tasks to complete
-        if (MigrationEntity::STATUS_MIGRATORS !== $this->migrationEntity->getStatus()) {
+        if (MigrationStatus::MIGRATORS !== $this->migrationEntity->getStatus()) {
             $remainingTasks = $this->migrationEntity->getBeforeTasks()
                 ->filter(fn(TaskEntity $task) => false === $task->hasEnded());
 
@@ -217,20 +208,20 @@ class RunMigratorHandler implements MessageHandlerInterface
             throw new MigratorNotReadyException($this->migratorEntity);
         }
 
-        $this->updateMigrationStatus(MigrationEntity::STATUS_MIGRATORS);
+        $this->updateMigrationStatus(MigrationStatus::MIGRATORS);
     }
 
     /**
      * Update the migration status if needed
      */
-    private function updateMigrationStatus(string $status): void
+    private function updateMigrationStatus(MigrationStatus $status): void
     {
         if ($status !== $this->migrationEntity->getStatus()) {
             // Set start time if not set already
             $this->migrationEntity->setStartedAt();
 
             $this->migrationEntity->setStatus($status);
-            $this->logger->info(sprintf('Migration reached the %s status', $status), [
+            $this->logger->info(sprintf('Migration reached the %s status', $status->value), [
                 'migration' => $this->migrationEntity->getId(),
             ]);
         }
@@ -244,7 +235,7 @@ class RunMigratorHandler implements MessageHandlerInterface
     {
         // Dispatch messages for the dependent migrators
         $nextMigrators = $this->migratorEntity->getNextMigrators()
-            ->filter(fn(MigratorEntity $migrator) => MigratorEntity::STATUS_CREATED === $migrator->getStatus());
+            ->filter(fn(MigratorEntity $migrator) => ComponentStatus::CREATED === $migrator->getStatus());
 
         if ($nextMigrators->count() > 0) {
             foreach ($nextMigrators as $nextMigrator) {
@@ -273,7 +264,7 @@ class RunMigratorHandler implements MessageHandlerInterface
 
 
         // End of the migration
-        $this->updateMigrationStatus(MigrationEntity::STATUS_FINISHED);
+        $this->updateMigrationStatus(MigrationStatus::FINISHED);
         $this->migrationEntity->setFinishedAt();
         $this->entityManager->flush();
     }

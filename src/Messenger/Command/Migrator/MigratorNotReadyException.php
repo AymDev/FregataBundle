@@ -16,8 +16,8 @@ class MigratorNotReadyException extends \Exception
             sprintf(
                 'Migrator %d in %s status is not ready as the migration is in %s state',
                 $migratorEntity->getId(),
-                $migratorEntity->getStatus(),
-                $migratorEntity->getMigration()->getStatus()
+                $migratorEntity->getStatus()->value,
+                $migratorEntity->getMigration()->getStatus()->value
             ),
             1647108455929
         );
