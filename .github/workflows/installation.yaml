@@ -28,6 +28,7 @@ jobs:
                 run: |
                     composer create-project symfony/skeleton:"${{ matrix.symfony }}.*" app
                     composer config -d ./app repositories.fregata-bundle path ../project
+                    composer config -d ./app minimum-stability dev
             # Cache Composer dependencies
             -   name: Get composer cache directory
                 id: composer-cache
